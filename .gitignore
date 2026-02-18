@@ -47,6 +47,17 @@ po/*~
 
 # RStudio Connect folder
 rsconnect/
+<<<<<<< HEAD
+<<<<<<< HEAD
+*.Rproj*
+# *.Rproj*
+=======
 
 #setup for git
 *.Rproj*
+>>>>>>> dbd6f1a94acc7d6d9678aa82647f9209be569b2f
+=======
+
+#setup for git
+*.Rproj*
+>>>>>>> 35ed0f17c34cd1a999126a868bd020ebeff063f3
