@@ -21,3 +21,4 @@ TimelyEffectiveCare <- Timely_and_Effective_Care_Hospital
 TimelyEffectiveCare[["Facility ID"]] <- NULL
 colnames(TimelyEffectiveCare)
 TimelyEffectiveCare[["Facility ID"]] <- NULL
+bello
