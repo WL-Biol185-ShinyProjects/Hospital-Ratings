@@ -45,5 +45,9 @@ shinyApp(ui, server)
 #editing data
 df <- df %>% select(-`Footnote`)
 df <- df %>% select(-`Measure Name`)
-df <- df %>% select(-`Excess Readmission Rate`)
+df <- df %>% select(-`Excess Readmission Ratio`)
+df <- df %>% select(-`Expected Readmission Rate`)
+df <- df %>% select(-`Start Date`)
+df <- df %>% select(-`End Date`)
 
+shinyApp(ui, server)
