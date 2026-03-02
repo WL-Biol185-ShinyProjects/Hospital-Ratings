@@ -8,6 +8,7 @@ df <- FY_2025_Hospital_Readmissions_Reduction_Program_Hospital
 # Clean data
 df <- df %>% select(-`Facility ID`)
 df$`Number of Readmissions` <- as.numeric(df$`Number of Readmissions`)
+df$`Number of Discharges` <- as.numeric(df$`Number of Discharges`)
 
 # Shiny App
 ui <- fluidPage(
