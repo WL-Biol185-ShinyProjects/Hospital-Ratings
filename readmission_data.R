@@ -51,3 +51,19 @@ df <- df %>% select(-`Start Date`)
 df <- df %>% select(-`End Date`)
 
 shinyApp(ui, server)
+
+
+#combining facility names 
+df_combined <- df %>%
+  group_by(`Facility Name`, State) %>%
+  summarise(
+    `Total Readmissions` = sum(`Number of Readmissions`, na.rm = TRUE),
+    `Total Discharges` = sum(`Number of Discharges`, na.rm = TRUE),
+    `Avg Predicted Readmission Rate` = mean(`Predicted Readmission Rate`, na.rm = TRUE)
+  ) %>%
+  ungroup()
+choices = unique(df_combined$`Facility Name`)
+df_combined %>%
+  filter(`Facility Name` == input$facility,
+         `Total Readmissions` >= input$readmissions[1],
+         `Total Readmissions` <= input$readmissions[2]) 
