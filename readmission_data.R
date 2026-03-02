@@ -41,3 +41,10 @@ server <- function(input, output) {
 }
 
 shinyApp(ui, server)
+
+#editing data
+
+df <- df %>% select(-`Facility ID`)
+df <- df %>% select(-`Footnote`)
+df <- df %>% select(-`Measure Name`)
+
