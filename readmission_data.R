@@ -67,3 +67,12 @@ df_combined %>%
   filter(`Facility Name` == input$facility,
          `Total Readmissions` >= input$readmissions[1],
          `Total Readmissions` <= input$readmissions[2]) 
+
+df$`Number of Discharges` <- as.numeric(df$`Number of Discharges`)
+
+shinyApp(ui, server)
+
+ui
+server
+shinyApp(ui, server)
+
