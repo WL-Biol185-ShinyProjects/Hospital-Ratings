@@ -72,7 +72,4 @@ df$`Number of Discharges` <- as.numeric(df$`Number of Discharges`)
 
 shinyApp(ui, server)
 
-ui
-server
-shinyApp(ui, server)
 
