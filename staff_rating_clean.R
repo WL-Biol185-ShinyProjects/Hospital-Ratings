@@ -16,3 +16,6 @@ staff_rating <- staff_rating %>% select( - `Number of Completed Surveys`)
 staff_rating <- staff_rating %>% select( - `Survey Response Percent Rate`)
 staff_rating <- staff_rating %>% select( - `Start Date`)
 staff_rating <- staff_rating %>% select( - `End Date`)
+
+staff_rating <- staff_rating[, -c(13, 17, 21, 22, 26, 27)]
+

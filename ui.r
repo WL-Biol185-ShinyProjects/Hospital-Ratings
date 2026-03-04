@@ -16,7 +16,11 @@ navbarPage("Hospital Ratings",
            tabPanel("Star Ratings",
                     verbatimTextOutput("summary")
            ),
-           tabPanel("Staff and Communication"),
+           tabPanel("Staff & Communication",
+                    fluidRow(
+                      column(12, plotOutput("staff_chart"))
+                    )
+           )
            tabPanel("Risk Factors"),
            
              navbarMenu("More",
