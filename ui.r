@@ -1,5 +1,6 @@
 library(markdown)
 
+staff_rating <- read.csv("staff_rating.csv")
 navbarPage("Hospital Ratings",
            tabPanel("Directory Map",
                     sidebarLayout(

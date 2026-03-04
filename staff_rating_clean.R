@@ -19,3 +19,4 @@ staff_rating <- staff_rating %>% select( - `End Date`)
 
 staff_rating <- staff_rating[, -c(13, 17, 21, 22, 26, 27)]
 
+write.csv(staff_rating, "staff_rating.csv") 

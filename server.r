@@ -1,3 +1,5 @@
+library(shiny)
+staff_rating <- read.csv("staff_rating.csv")
 function(input, output, session) {
   
   output$plot <- renderPlot({
