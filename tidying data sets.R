@@ -35,3 +35,6 @@ TimelyEffectiveCare[["Start Date"]] <-NULL
 TimelyEffectiveCare[["End Date"]] <-NULL
 TimelyEffectiveCare[["Sample"]] <-NULL
 TimelyEffectiveCare[["Footnote"]] <-NULL
+#saving file as new
+write.csv(TimelyEffectiveCare, "Timely_Effective_Care_cleaned.csv", row.names = FALSE)
+
