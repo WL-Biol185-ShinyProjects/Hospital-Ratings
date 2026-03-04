@@ -25,6 +25,13 @@ write.csv(VA_IPF, "VA_IPF_cleaned.csv", row.names = FALSE)
 
 #Tidying Timely and Effect...
 library(readr)
-Timely_and_Effective_Care_Hospital <- read_csv("Timely_and_Effective_Care-Hospital.csv")
+TimelyEffectiveCare <- read_csv("Timely_and_Effective_Care_Hospital.csv")
+#read_csv keeps spaces in titles
 View(Timely_and_Effective_Care_Hospital)
-
+View(TimelyEffectiveCare)
+TimelyEffectiveCare[["Facility ID"]] <-NULL
+#able to use space because used _ in read code
+TimelyEffectiveCare[["Start Date"]] <-NULL
+TimelyEffectiveCare[["End Date"]] <-NULL
+TimelyEffectiveCare[["Sample"]] <-NULL
+TimelyEffectiveCare[["Footnote"]] <-NULL
