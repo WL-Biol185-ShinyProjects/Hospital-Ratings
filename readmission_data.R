@@ -26,39 +26,57 @@ df_combined <- df %>%
 
 # Shiny App
 ui <- fluidPage(
-  titlePanel("Hospital Readmissions"),
-  sidebarLayout(
-    sidebarPanel(
-      selectInput("facility", 
-                  "Select Facility:", 
-                  choices = unique(df_combined$`Facility Name`),
-                  selected = unique(df_combined$`Facility Name`)[1]),
-      sliderInput("readmissions",
-                  "Number of Readmissions:",
-                  min = min(df_combined$`Total Readmissions`, na.rm = TRUE),
-                  max = max(df_combined$`Total Readmissions`, na.rm = TRUE),
-                  value = c(min(df_combined$`Total Readmissions`, na.rm = TRUE),
-                            max(df_combined$`Total Readmissions`, na.rm = TRUE)))
-    ),
-    mainPanel(
-      tableOutput("table")
-    )
+  titlePanel("Hospital Readmissions Dashboard"),
+  
+  # Search bar
+  fluidRow(
+    column(4, textInput("search", "Search Facility:", placeholder = "Type facility name...")),
+    column(4, selectInput("state", "Filter by State:", 
+                          choices = c("All", sort(unique(df_combined$State))),
+                          selected = "All"))
+  ),
+  
+  hr(),
+  
+  # Bar chart
+  fluidRow(
+    column(12, plotOutput("barchart", height = "300px"))
+  ),
+  
+  hr(),
+  
+  # Full wide table
+  fluidRow(
+    column(12, tableOutput("table"))
   )
 )
 
 server <- function(input, output) {
+  
+  filtered <- reactive({
+    data <- df_combined
+    if (input$search != "") {
+      data <- data %>% filter(grepl(input$search, `Facility Name`, ignore.case = TRUE))
+    }
+    if (input$state != "All") {
+      data <- data %>% filter(State == input$state)
+    }
+    data
+  })
+  
+  output$barchart <- renderPlot({
+    filtered() %>%
+      slice_max(`Total Readmissions`, n = 10) %>%
+      ggplot(aes(x = reorder(`Facility Name`, `Total Readmissions`), y = `Total Readmissions`)) +
+      geom_bar(stat = "identity", fill = "#2c7fb8") +
+      coord_flip() +
+      labs(title = "Top 10 Facilities by Total Readmissions", x = "", y = "Total Readmissions") +
+      theme_minimal()
+  })
+  
   output$table <- renderTable({
-    df_combined %>%
-      filter(`Facility Name` == input$facility,
-             `Total Readmissions` >= input$readmissions[1],
-             `Total Readmissions` <= input$readmissions[2])
+    filtered()
   })
 }
 
 shinyApp(ui, server)
-
-
-
-
-
-
