@@ -18,14 +18,13 @@ VA_IPF <- read.csv("VA_IPF_cleaned.csv")
 #fixing errors:
 names(VA_IPF)
 
-
 getwd()
 ls()
 write.csv(VA_IPF, "VA_IPF_cleaned.csv", row.names = FALSE)
+
+
 #Tidying Timely and Effect...
-  #none of this is in the shared file pls figure this out next time!!
-TimelyEffectiveCare <- Timely_and_Effective_Care_Hospital
-TimelyEffectiveCare[["Facility ID"]] <- NULL
-colnames(TimelyEffectiveCare)
-TimelyEffectiveCare[["Facility ID"]] <- NULL
+library(readr)
+Timely_and_Effective_Care_Hospital <- read_csv("Timely_and_Effective_Care-Hospital.csv")
+View(Timely_and_Effective_Care_Hospital)
 
