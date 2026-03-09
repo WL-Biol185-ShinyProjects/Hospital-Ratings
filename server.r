@@ -1,5 +1,6 @@
 library(shiny)
 staff_rating <- read.csv("staff_rating.csv", row.names = 1, check.names = FALSE)
+birthing <- read.csv("Birthing_Friendly_Hospitals_Geocoded.csv")
 function(input, output, session) {
   
   output$plot <- renderPlot({
@@ -87,6 +88,19 @@ function(input, output, session) {
     staff_filtered() %>%
       select(`Facility Name`, State, all_of(selected_cols()))
   })
-  
+  # Birthing Friendly Hospitals Map
+    output$map <- renderPlot({
+      usa_states <- map_data("state")
+  ggplot()+
+       geom_polygon(data = usa_states, aes(x = long, y = lat, group = group),
+                   fill = "lightgray", color = "white") +
+        geom_point(data = birthing, aes(x = lon, y = lat),
+                   color = "red", size = 2, alpha = 0.6) +
+        coord_fixed(1.3) +
+        theme_void() +
+        labs(title = "Birthing Friendly Hospitals") +
+        theme(plot.title = element_text(hjust = 0.5, size = 16))
+    })
+    
 }
 
