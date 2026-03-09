@@ -2,6 +2,7 @@ library(markdown)
 
 staff_rating <- read.csv("staff_rating.csv")
 navbarPage("Hospital Ratings",
+           theme = bslib::bs_theme(bootswatch = "lumen"),
            tabPanel("Directory Map",
                     sidebarLayout(
                       sidebarPanel(
@@ -43,15 +44,16 @@ navbarPage("Hospital Ratings",
                       column(12, tableOutput("staff_table"))
                     )
            ), 
+           tabPanel("Specialty Care",
+                    verbatimTextOutput("summary")
+           ),
            tabPanel("Risk Factors"),
            navbarMenu("More",
                       tabPanel("Table",
                                DT::dataTableOutput("table")
                       ),
                       tabPanel("About")
-           )
+           ),
+           
 )
-          tabPanel("Specialty Care",
-                   verbatimTextOutput("summary")
-          )
-
+          
