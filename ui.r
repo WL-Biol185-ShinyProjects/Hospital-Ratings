@@ -45,7 +45,11 @@ navbarPage("Hospital Ratings",
                     )
            ), 
            tabPanel("Specialty Care",
-                    verbatimTextOutput("summary")
+                    tabPanel("Birthing Friendly Hospitals",
+                             fluidRow(
+                               column(12, plotOutput("map", height = "600px"))
+                             )
+                    )
            ),
            tabPanel("Risk Factors"),
            navbarMenu("More",
