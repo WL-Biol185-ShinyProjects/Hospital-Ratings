@@ -51,6 +51,7 @@ navbarPage("Hospital Ratings",
                       tabPanel("About")
            )
 )
+
           tabPanel("Specialty Care",
                    verbatimTextOutput("summary")
           )
