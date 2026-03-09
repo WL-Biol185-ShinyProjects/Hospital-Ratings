@@ -2,6 +2,7 @@ library(markdown)
 
 staff_rating <- read.csv("staff_rating.csv")
 navbarPage("Hospital Ratings",
+           theme = bslib::bs_theme(bootswatch = "lumen"),
            tabPanel("Directory Map",
                     sidebarLayout(
                       sidebarPanel(
