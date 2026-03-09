@@ -1,5 +1,5 @@
 library(shiny)
-staff_rating <- read.csv("staff_rating.csv")
+staff_rating <- read.csv("staff_rating.csv", row.names = 1, check.names = FALSE)
 function(input, output, session) {
   
   output$plot <- renderPlot({
@@ -79,8 +79,8 @@ function(input, output, session) {
       theme_minimal() +
       theme(legend.position = "bottom",
             legend.text = element_text(size = 7))
-  })
-  
+
+})
   # Table
   output$staff_table <- renderTable({
     req(input$measure)
@@ -89,3 +89,4 @@ function(input, output, session) {
   })
   
 }
+
