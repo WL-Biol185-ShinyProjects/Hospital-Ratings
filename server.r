@@ -79,8 +79,8 @@ function(input, output, session) {
       theme_minimal() +
       theme(legend.position = "bottom",
             legend.text = element_text(size = 7))
-  })
-  
+
+})
   # Table
   output$staff_table <- renderTable({
     req(input$measure)
