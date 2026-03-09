@@ -1,5 +1,5 @@
 library(shiny)
-staff_rating <- read.csv("staff_rating.csv")
+staff_rating <- read.csv("staff_rating.csv", row.names = 1, check.names = FALSE)
 function(input, output, session) {
   
   output$plot <- renderPlot({
@@ -89,3 +89,4 @@ function(input, output, session) {
   })
   
 }
+
