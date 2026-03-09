@@ -44,12 +44,12 @@ navbarPage("Hospital Ratings",
                       column(12, tableOutput("staff_table"))
                     )
            ), 
-           tabPanel("Specialty Care",
-                    tabPanel("Birthing Friendly Hospitals",
-                             fluidRow(
-                               column(12, plotOutput("map", height = "600px"))
-                             )
-                    )
+           navbarMenu("Specialty Care",
+                      tabPanel("Birthing Friendly Hospitals",
+                               fluidRow(
+                                 column(12, plotOutput("map", height = "600px"))
+                               )
+                      )
            ),
            tabPanel("Risk Factors"),
            navbarMenu("More",
