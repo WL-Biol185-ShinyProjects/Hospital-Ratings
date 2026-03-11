@@ -46,27 +46,28 @@ navbarPage("Hospital Ratings",
            ), 
            navbarMenu("Specialty Care",
                       tabPanel("Birthing Friendly Hospitals",
+                               fluidRow(column(12, leafletOutput("worldMap", height = "600px")))
+                      ),
+                      tabPanel("Veteran Inpatient Psychiatric Facilities",
+                               fluidRow(column(12, leafletOutput("vaMap", height = "600px"))),
+                               hr(),
                                fluidRow(
-                                 column(12, leafletOutput("worldMap", height = "600px"))
+                                 column(12,
+                                        h3("VA Inpatient Psychiatric Facility Hotlines"),
+                                        selectInput("hotline_state", "Filter by State:",
+                                                    choices = c("All", sort(unique(VA_IPF_geocoded$State))),
+                                                    selected = "All"),
+                                        uiOutput("hotlineCards")
+                                 )
                                )
                       )
            ),
-           tabPanel("Veteran Inpatient Psychiatric Facilities",
-                    fluidRow(
-                      column(12, leafletOutput("vaMap", height = "600px"))
-                    )
+           tabPanel("Risk Factors"),
+           navbarMenu("More",
+                      tabPanel("Table", DT::dataTableOutput("table")),
+                      tabPanel("About")
            )
 )
-           tabPanel("Risk Factors")
-           navbarMenu("More",
-                      tabPanel("Table",
-                               DT::dataTableOutput("table")
-                      ),
-                      tabPanel("About")
-           )        
-           )
-           
-
 
 
 
