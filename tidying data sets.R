@@ -38,3 +38,10 @@ TimelyEffectiveCare[["Footnote"]] <-NULL
 #saving file as new
 write.csv(TimelyEffectiveCare, "Timely_Effective_Care_cleaned.csv", row.names = FALSE)
 
+#tidying surgery centers (DID NOT WORK NEED TO FIGURE OUT)
+library(tidyverse)
+library(readr)
+Surgery_centers <- read.csv("ASCQR_OAS_CAHPS_BY_ASC.csv")
+Surgery_centers[["Start Date"]] <- NULL
+Surgery_centers[["Facility ID"]] <- NULL
+Surgery_centers[["End Date"]] <- NULL
