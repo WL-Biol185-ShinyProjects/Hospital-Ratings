@@ -1,5 +1,7 @@
 library(shiny)
 library(leaflet)
+library(tidyverse)
+
 staff_rating <- read.csv("staff_rating.csv", row.names = 1, check.names = FALSE)
 birthing <- read.csv("Birthing_Friendly_Hospitals_Geocoded.csv")
 function(input, output, session) {
@@ -89,8 +91,13 @@ function(input, output, session) {
     staff_filtered() %>%
       select(`Facility Name`, State, all_of(selected_cols()))
   })
-  # Birthing Friendly Hospitals Map
-  output$worldMap <- renderLeaflet({
+  # Birthing Friendly Hospitals Map and Directions
+  babyIcon <- makeIcon(
+    iconUrl = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%91%B6%3C/text%3E%3C/svg%3E",
+    iconWidth = 35, iconHeight = 35
+  
+  )
+    output$worldMap <- renderLeaflet({
     
     btn <- input$newButton
     
@@ -101,9 +108,11 @@ function(input, output, session) {
         zoom = 5
       ) %>%
       addTiles() %>%
-      addMarkers(
+    
+       addMarkers(
         lng = ~lon,
         lat = ~lat,
+        icon = babyIcon,
         clusterOptions = markerClusterOptions(),
         popup = ~paste0(
           "<b>", name, "</b><br>",
