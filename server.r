@@ -97,6 +97,18 @@ function(input, output, session) {
     iconWidth = 35, iconHeight = 35
   
   )
+  
+  babyCluster <- markerClusterOptions(
+    iconCreateFunction = JS("
+    function(cluster) {
+      return L.divIcon({
+        html: '<div style=\"background-color: #a8d8ea; border-radius: 50%; width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; border: 2px solid #7ab3c8; position: relative;\"><span style=\"font-size:26px;\">🍼</span><span style=\"position:absolute; bottom:-5px; right:-5px; background:#7ab3c8; border-radius:50%; width:20px; height:20px; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:bold; color:white;\">' + cluster.getChildCount() + '</span></div>',
+        className: 'baby-cluster',
+        iconSize: L.point(50, 50)
+      });
+    }
+  ")
+  )
     output$worldMap <- renderLeaflet({
     
     btn <- input$newButton
@@ -113,7 +125,7 @@ function(input, output, session) {
         lng = ~lon,
         lat = ~lat,
         icon = babyIcon,
-        clusterOptions = markerClusterOptions(),
+        clusterOptions = babyCluster,
         popup = ~paste0(
           "<b>", name, "</b><br>",
           addr, "<br>",
