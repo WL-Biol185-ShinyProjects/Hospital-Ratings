@@ -47,7 +47,7 @@ navbarPage("Hospital Ratings",
            navbarMenu("Specialty Care",
                       tabPanel("Birthing Friendly Hospitals",
                                fluidRow(
-                                 column(12, plotOutput("map", height = "600px"))
+                                 column(12, leafletOutput("worldMap", height = "600px"))
                                )
                       )
            ),
@@ -60,15 +60,6 @@ navbarPage("Hospital Ratings",
            )        
            )
            
-
-
-
-
-
-
-
-
-
 
 
 

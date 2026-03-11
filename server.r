@@ -1,4 +1,5 @@
 library(shiny)
+library(leaflet)
 staff_rating <- read.csv("staff_rating.csv", row.names = 1, check.names = FALSE)
 birthing <- read.csv("Birthing_Friendly_Hospitals_Geocoded.csv")
 function(input, output, session) {
@@ -89,18 +90,23 @@ function(input, output, session) {
       select(`Facility Name`, State, all_of(selected_cols()))
   })
   # Birthing Friendly Hospitals Map
-    output$map <- renderPlot({
-      usa_states <- map_data("state")
-  ggplot()+
-       geom_polygon(data = usa_states, aes(x = long, y = lat, group = group),
-                   fill = "lightgray", color = "white") +
-        geom_point(data = birthing, aes(x = lon, y = lat),
-                   color = "red", size = 2, alpha = 0.6) +
-        coord_fixed(1.3) +
-        theme_void() +
-        labs(title = "Birthing Friendly Hospitals") +
-        theme(plot.title = element_text(hjust = 0.5, size = 16))
-    })
+  output$worldMap <- renderLeaflet({
+    
+    btn <- input$newButton
+    
+    leaflet(Birthing_Friendly_Hospitals_Geocoded) %>%
+      setView(
+        lng = mean(Birthing_Friendly_Hospitals_Geocoded$lon, na.rm = TRUE),
+        lat = mean(Birthing_Friendly_Hospitals_Geocoded$lat, na.rm = TRUE),
+        zoom = 5
+      ) %>%
+      addTiles() %>%
+      addMarkers(
+        lng = ~lon,
+        lat = ~lat,
+        popup = ~paste("Hospital:", name)  # adjust 'name' to your actual column name
+      )
+  })
     
 }
 
