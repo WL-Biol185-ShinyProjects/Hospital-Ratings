@@ -51,7 +51,13 @@ navbarPage("Hospital Ratings",
                                )
                       )
            ),
-           tabPanel("Risk Factors"),
+           tabPanel("Veteran Inpatient Psychiatric Facilities",
+                    fluidRow(
+                      column(12, leafletOutput("vaMap", height = "600px"))
+                    )
+           )
+)
+           tabPanel("Risk Factors")
            navbarMenu("More",
                       tabPanel("Table",
                                DT::dataTableOutput("table")

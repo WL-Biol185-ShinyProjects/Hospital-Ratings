@@ -137,4 +137,24 @@ function(input, output, session) {
   })
     
 }
-
+#Vet Psych Map
+output$vaMap <- renderLeaflet({
+  leaflet(VA_IPF_geocoded) %>%
+    setView(
+      lng = mean(VA_IPF_geocoded$lon, na.rm = TRUE),
+      lat = mean(VA_IPF_geocoded$lat, na.rm = TRUE),
+      zoom = 4
+    ) %>%
+    addTiles() %>%
+    addMarkers(
+      lng = ~lon,
+      lat = ~lat,
+      popup = ~paste0(
+        "<b>", Facility.Name, "</b><br>",
+        Address, "<br>",
+        "<a href='https://www.google.com/maps/dir/?api=1&destination=",
+        lat, ",", lon,
+        "' target='_blank'>Get Directions</a>"
+      )
+    )
+})
