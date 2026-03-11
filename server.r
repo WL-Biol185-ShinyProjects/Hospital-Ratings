@@ -104,7 +104,14 @@ function(input, output, session) {
       addMarkers(
         lng = ~lon,
         lat = ~lat,
-        popup = ~paste("Hospital:", name)  # adjust 'name' to your actual column name
+        clusterOptions = markerClusterOptions(),
+        popup = ~paste0(
+          "<b>", name, "</b><br>",
+          addr, "<br>",
+          "<a href='https://www.google.com/maps/dir/?api=1&destination=",
+          lat, ",", lon,
+          "' target='_blank'>Get Directions</a>"
+        )
       )
   })
     
