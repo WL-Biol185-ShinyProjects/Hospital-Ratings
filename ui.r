@@ -62,7 +62,8 @@ navbarPage("Hospital Ratings",
                                         uiOutput("hotlineCards")
                                  )
                                )
-                      )
+                      ),
+                      tabPanel("Surgery Centers")
            ),
            tabPanel("Risk Factors"),
            navbarMenu("More",
