@@ -4,7 +4,7 @@ library(tidyverse)
 
 staff_rating <- read.csv("staff_rating.csv", row.names = 1, check.names = FALSE)
 birthing <- read.csv("Birthing_Friendly_Hospitals_Geocoded.csv")
-VA_IPF_geocoded <- read.csv("VA_IPF_cleaned.csv")
+VA_IPF_geocoded <- read.csv("VA_IPF_geocoded.csv")
 function(input, output, session) {
   
   output$plot <- renderPlot({
@@ -158,7 +158,7 @@ function(input, output, session) {
             "<b>", Facility.Name, "</b><br>",
             full_address, "<br>",
             "<a href='https://www.google.com/maps/dir/?api=1&destination=",
-            lat, ",", long,
+            lat, ",", lon,
             "' target='_blank'>Get Directions</a>"
           )
         )

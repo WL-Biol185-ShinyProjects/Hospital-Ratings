@@ -2,7 +2,7 @@ library(markdown)
 library(leaflet)
 
 staff_rating <- read.csv("staff_rating.csv")
-VA_IPF_geocoded <- read.csv("VA_IPF_cleaned.csv")
+VA_IPF_geocoded <- read.csv("VA_IPF_geocoded.csv")
 navbarPage("Hospital Ratings",
            theme = bslib::bs_theme(bootswatch = "lumen"),
            tabPanel("Directory Map",
