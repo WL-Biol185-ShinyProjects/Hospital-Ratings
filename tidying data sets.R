@@ -44,4 +44,11 @@ library(readr)
 locations[["Start Date"]] <- NULL
 locations[["Facility ID"]] <- NULL
 locations[["End Date"]] <- NULL 
-locations
+locations[["Address"]] <- NULL
+locations[["City/Town"]] <- NULL
+locations[["State"]] <- NULL
+locations[["Zip Code"]] <- NULL
+locations[["County/Parish"]] <- NULL
+
+#saving tidied
+write.csv(locations, "SurgCenters.csv", row.names = FALSE)
