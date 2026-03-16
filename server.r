@@ -4,6 +4,7 @@ library(tidyverse)
 
 staff_rating <- read.csv("staff_rating.csv", row.names = 1, check.names = FALSE)
 birthing <- read.csv("Birthing_Friendly_Hospitals_Geocoded.csv")
+VA_IPF_geocoded <- read.csv("VA_IPF_cleaned.csv")
 function(input, output, session) {
   
   output$plot <- renderPlot({
@@ -137,7 +138,11 @@ function(input, output, session) {
   })
     
     # Veteran Inpatient Psychiatric Facilities Map
-    output$vaMap <- renderLeaflet({
+    brainIcon <- makeIcon(
+      iconUrl = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='50' fill='%23c8d8e8'/%3E%3Ctext y='.85em' x='.1em' font-size='80'%3E%F0%9F%A7%A0%3C/text%3E%3C/svg%3E",
+      iconWidth = 45, iconHeight = 45
+    )
+      output$vaMap <- renderLeaflet({
       leaflet(VA_IPF_geocoded) %>%
         setView(
           lng = mean(VA_IPF_geocoded$lon, na.rm = TRUE),
@@ -148,14 +153,39 @@ function(input, output, session) {
         addMarkers(
           lng = ~lon,
           lat = ~lat,
+          icon = brainIcon,
           popup = ~paste0(
             "<b>", Facility.Name, "</b><br>",
-            Address, "<br>",
+            full_address, "<br>",
             "<a href='https://www.google.com/maps/dir/?api=1&destination=",
-            lat, ",", lon,
+            lat, ",", long,
             "' target='_blank'>Get Directions</a>"
           )
         )
     })
-    
+    # Vet IPF Hotline section
+    output$hotlineCards <- renderUI ({
+      data <- VA_IPF_geocoded
+      if (input$hotline_state != "All") {
+        data <- data %>% filter(State == input$hotline_state)
+      }
+      
+      cards <- lapply(1:nrow(data), function(i) {
+        div(style = "background-color: #f5f5f5; border-radius: 10px; padding: 15px; margin: 10px; display: inline-block; width: 280px; vertical-align: top; box-shadow: 2px 2px 5px rgba(0,0,0,0.1);",
+            h4(style = "color: #1a3a5c; margin-top: 0;",
+               "\U1F3E5 ", data$Facility.Name[i]),
+            p(style = "color: #555;",
+              "\U1F4CD ", data$full_address[i]),
+            p(style = "font-size: 16px; font-weight: bold;",
+              "\U260E\UFE0F ", data$Telephone.Number[i]),
+            tags$a(
+              href = paste0("tel:", gsub("[^0-9]", "", data$Telephone.Number[i])),
+              class = "btn btn-primary btn-sm",
+              style = "background-color: #1a3a5c; border: none;",
+              "Call Now"
+            )
+        )
+      })
+      do.call(tagList, cards)
+})
 }

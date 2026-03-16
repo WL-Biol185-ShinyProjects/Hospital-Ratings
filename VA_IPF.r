@@ -20,3 +20,5 @@ VA_IPF_cleaned <- read.csv("VA_IPF_cleaned.csv") %>%
 VA_IPF_geocoded <- VA_IPF_cleaned %>%
   unite("full_address", Address, City.Town, State, ZIP.Code, sep = ", ", remove = FALSE) %>%
   geocode(full_address, method = "osm", lat = lat, long = lon)
+write.csv(VA_IPF_cleaned, "VA_IPF_cleaned.csv", row.names = FALSE)
+
