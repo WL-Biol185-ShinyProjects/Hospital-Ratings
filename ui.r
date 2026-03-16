@@ -3,6 +3,8 @@ library(leaflet)
 
 staff_rating <- read.csv("staff_rating.csv")
 VA_IPF_geocoded <- read.csv("VA_IPF_geocoded.csv")
+hai_cleaned <- read.csv("hai_cleaned.csv")
+
 navbarPage("Hospital Ratings",
            theme = bslib::bs_theme(bootswatch = "lumen"),
            tabPanel("Directory Map",
@@ -65,21 +67,62 @@ navbarPage("Hospital Ratings",
                       ),
                       tabPanel("Surgery Centers")
            ),
-           tabPanel("Risk Factors"),
+          #RISK FACTORS
+            tabPanel("Risk Factors",
+                    tabsetPanel(
+                      tabPanel("Find My Hospital",
+                               br(),
+                               fluidRow(
+                                 column(3, selectInput("state_hai", "Filter by State:",
+                                                       choices = c("All", sort(unique(hai_cleaned$State))),
+                                                       selected = "All")),
+                                 column(3, selectInput("facility_hai", "Filter by Facility:",
+                                                       choices = c("All", sort(unique(hai_cleaned$Facility.Name))),
+                                                       selected = "All")),
+                                 column(6, checkboxGroupInput("infection_type", "Select Infection Types:",
+                                                              choices = c("Central Line Infection",
+                                                                          "Urinary Tract Infection",
+                                                                          "Surgical Site - Colon",
+                                                                          "Surgical Site - Hysterectomy",
+                                                                          "MRSA Blood Infection",
+                                                                          "C. Difficile Infection"),
+                                                              selected = c("Central Line Infection",
+                                                                           "Urinary Tract Infection",
+                                                                           "MRSA Blood Infection",
+                                                                           "C. Difficile Infection"),
+                                                              inline = TRUE))
+                               ),
+                               hr(),
+                               fluidRow(column(12, plotOutput("hai_chart", height = "500px"))),
+                               hr(),
+                               fluidRow(column(12, tableOutput("hai_table")))
+                      ),
+                      tabPanel("Compare Hospitals",
+                               br(),
+                               fluidRow(
+                                 column(3, selectInput("state_hai_compare", "Filter by State:",
+                                                       choices = c("All", sort(unique(hai_cleaned$State))),
+                                                       selected = "All")),
+                                 column(9, checkboxGroupInput("infection_type_compare", "Select Infection Types:",
+                                                              choices = c("Central Line Infection",
+                                                                          "Urinary Tract Infection",
+                                                                          "Surgical Site - Colon",
+                                                                          "Surgical Site - Hysterectomy",
+                                                                          "MRSA Blood Infection",
+                                                                          "C. Difficile Infection"),
+                                                              selected = c("Central Line Infection",
+                                                                           "Urinary Tract Infection",
+                                                                           "MRSA Blood Infection",
+                                                                           "C. Difficile Infection"),
+                                                              inline = TRUE))
+                               ),
+                               hr(),
+                               fluidRow(column(12, plotOutput("hai_compare_chart", height = "500px")))
+                      )
+                    )
+           ),
            navbarMenu("More",
                       tabPanel("Table", DT::dataTableOutput("table")),
                       tabPanel("About")
            )
 )
-
-
-
-
-
-
-
-
-
-
-          
-

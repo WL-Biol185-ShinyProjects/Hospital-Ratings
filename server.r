@@ -5,6 +5,7 @@ library(tidyverse)
 staff_rating <- read.csv("staff_rating.csv", row.names = 1, check.names = FALSE)
 birthing <- read.csv("Birthing_Friendly_Hospitals_Geocoded.csv")
 VA_IPF_geocoded <- read.csv("VA_IPF_geocoded.csv")
+hai_cleaned <- read.csv("hai_cleaned.csv")
 function(input, output, session) {
   
   output$plot <- renderPlot({
@@ -92,6 +93,131 @@ function(input, output, session) {
     staff_filtered() %>%
       select(`Facility Name`, State, all_of(selected_cols()))
   })
+  
+  #Hospital Associated Infections
+  hai_filtered <- reactive({
+    data <- hai_cleaned
+    if (input$state_hai != "All") {
+      data <- data %>% filter(State == input$state_hai)
+    }
+    if (input$facility_hai != "All") {
+      data <- data %>% filter(Facility.Name == input$facility_hai)
+    }
+    data <- data %>% filter(Infection.Type %in% input$infection_type)
+    data
+  })
+  # Update facility dropdown when state changes
+  observeEvent(input$state_hai, {
+    if (input$state_hai == "All") {
+      facilities <- c("All", sort(unique(hai_cleaned$Facility.Name)))
+    } else {
+      facilities <- c("All", sort(unique(hai_cleaned$Facility.Name[hai_cleaned$State == input$state_hai])))
+    }
+    updateSelectInput(session, "facility_hai", choices = facilities, selected = "All")
+  })
+  # HAI Chart Find My Hospital
+  output$hai_chart <- renderPlot({
+    req(input$infection_type)
+    data <- hai_filtered()
+    
+    # Shared plot elements
+    shared_layers <- list(
+      geom_hline(yintercept = 1, linetype = "dashed", color = "black", linewidth = 1),
+      annotate("text", x = 0.6, y = 1.05,
+               label = "National Average (1.0) — Lower is Better",
+               color = "black", size = 3.5, hjust = 0),
+      coord_flip(),
+      theme_minimal(),
+      theme(legend.position = "bottom",
+            plot.subtitle = element_text(size = 9, color = "gray50"),
+            axis.text.y = element_text(size = 11))
+    )
+    
+    if (input$facility_hai == "All") {
+      data %>%
+        group_by(Infection.Type) %>%
+        summarise(Avg_SIR = mean(Score, na.rm = TRUE), .groups = "drop") %>%
+        mutate(Performance = case_when(
+          Avg_SIR < 1 ~ "Better than Average",
+          Avg_SIR > 1 ~ "Worse than Average",
+          TRUE ~ "About Average"
+        )) %>%
+        ggplot(aes(x = reorder(Infection.Type, Avg_SIR), y = Avg_SIR, fill = Performance)) +
+        geom_col() +
+        scale_fill_manual(values = c(
+          "Better than Average" = "#2ecc71",
+          "About Average"       = "#f39c12",
+          "Worse than Average"  = "#e74c3c"
+        ), drop = FALSE) +
+        labs(title = "Select a facility to see its infection rates",
+             subtitle = "Currently showing state average — filter by facility above",
+             x = "", y = "Average SIR Score", fill = "Performance") +
+        shared_layers
+      
+    } else {
+      data %>%
+        ggplot(aes(x = reorder(Infection.Type, Score), y = Score, fill = Compared.to.National)) +
+        geom_col() +
+        scale_fill_manual(values = c(
+          "Better than the National Benchmark"   = "#2ecc71",
+          "No Different than National Benchmark" = "#f39c12",
+          "Worse than the National Benchmark"    = "#e74c3c"
+        ), drop = FALSE) +
+        labs(title = paste("Infection Rates:", input$facility_hai),
+             subtitle = "Scores below 1.0 mean fewer infections than the national average",
+             x = "", y = "Standardized Infection Ratio (SIR)", fill = "Performance") +
+        shared_layers
+    }
+  })
+  # HAI Table
+  output$hai_table <- renderTable({
+    req(input$infection_type)
+    hai_filtered() %>%
+      select(
+        "Facility" = Facility.Name,
+        "State" = State,
+        "Infection Type" = Infection.Type,
+        "SIR Score" = Score,
+        "Compared to National Average" = Compared.to.National
+      ) %>%
+      arrange(`SIR Score`)
+  })
+  # Compare tab filtered data
+  hai_compare_filtered <- reactive({
+    data <- hai_cleaned
+    if (input$state_hai_compare != "All") {
+      data <- data %>% filter(State == input$state_hai_compare)
+    }
+    data <- data %>% filter(Infection.Type %in% input$infection_type_compare)
+    data
+  })
+  
+  # Compare chart
+  output$hai_compare_chart <- renderPlot({
+    req(input$infection_type_compare)
+    hai_compare_filtered() %>%
+      ggplot(aes(x = Infection.Type, y = Score, fill = Infection.Type)) +
+      geom_boxplot(outlier.shape = 21, outlier.size = 1.5) +
+      geom_hline(yintercept = 1, linetype = "dashed", color = "black", linewidth = 1) +
+      annotate("text", x = 0.6, y = 1.05,
+               label = "National Average (1.0) — Lower is Better",
+               color = "black", size = 3.5, hjust = 0) +
+      coord_flip() +
+      labs(
+        title = if (input$state_hai_compare == "All") {
+          "Infection Rate Distribution — All Hospitals Nationwide"
+        } else {
+          paste("Infection Rate Distribution —", input$state_hai_compare, "Hospitals")
+        },
+        subtitle = "Each box shows the spread of scores across all hospitals in the selected area",
+        x = "", y = "Standardized Infection Ratio (SIR)"
+      ) +
+      theme_minimal() +
+      theme(legend.position = "none",
+            plot.subtitle = element_text(size = 9, color = "gray50"),
+            axis.text.y = element_text(size = 11))
+  })
+  
   # Birthing Friendly Hospitals Map and Directions
   babyIcon <- makeIcon(
     iconUrl = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%91%B6%3C/text%3E%3C/svg%3E",
