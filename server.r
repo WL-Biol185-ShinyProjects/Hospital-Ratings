@@ -310,7 +310,65 @@ function(input, output, session) {
         })
   
   # Birthing Friendly Hospitals Map and Directions
-  babyIcon <- makeIcon(
+        output$birthing_summary_bar <- renderUI({
+          total    <- nrow(birthing)
+          n_states <- length(unique(birthing$state))
+          
+          span(
+            style = "font-size:15px; color:#333;",
+            tags$b(paste0("🏥 ", total)),
+            " Birthing Friendly Hospitals across ",
+            tags$b(paste0(n_states, " states"))
+          )
+        })
+        # Birthing hospital cards
+        output$birthing_cards <- renderUI({
+          data <- birthing
+          if (input$birthing_state != "All") {
+            data <- data %>% filter(state == input$birthing_state)
+          }
+          
+          if (nrow(data) == 0) {
+            return(p("No hospitals found for the selected state."))
+          }
+          
+          cards <- lapply(1:nrow(data), function(i) {
+            div(
+              style = "background:#fff; border:1px solid #f8bbd0; border-radius:10px;
+               padding:15px; margin:10px; display:inline-block; width:280px;
+               vertical-align:top; box-shadow:2px 2px 5px rgba(0,0,0,0.08);",
+              
+              h4(style = "color:#c2185b; margin-top:0; font-size:15px;",
+                 "🏥 ", data$name[i]),
+              
+              p(style = "color:#555; font-size:13px; margin:4px 0;",
+                "📍 ", data$addr[i], ", ", data$city[i], ", ", 
+                data$state[i], " ", data$zip[i]),
+              
+              tags$a(
+                href = paste0("https://www.google.com/maps/dir/?api=1&destination=",
+                              data$lat[i], ",", data$lon[i]),
+                target = "_blank",
+                class = "btn btn-sm",
+                style = "background:#e91e8c; color:white; border:none;
+                 margin-top:6px; margin-right:4px;",
+                "🗺️ Directions"
+              ),
+              
+              if (!is.na(data$phone[i]) && data$phone[i] != "") {
+                tags$a(
+                  href = paste0("tel:", gsub("[^0-9]", "", data$phone[i])),
+                  class = "btn btn-sm",
+                  style = "background:#1a3a5c; color:white; border:none; margin-top:6px;",
+                  "📞 Call"
+                )
+              }
+            )
+          })
+          do.call(tagList, cards)
+        })
+        
+    babyIcon <- makeIcon(
     iconUrl = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%91%B6%3C/text%3E%3C/svg%3E",
     iconWidth = 35, iconHeight = 35
   

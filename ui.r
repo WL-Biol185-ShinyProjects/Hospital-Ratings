@@ -4,9 +4,11 @@ library(leaflet)
 staff_rating <- read.csv("staff_rating.csv")
 VA_IPF_geocoded <- read.csv("VA_IPF_geocoded.csv")
 hai_cleaned <- read.csv("hai_cleaned.csv")
+birthing <- read.csv("Birthing_Friendly_Hospitals_Geocoded.csv")
 
 navbarPage("Hospital Ratings",
            theme = bslib::bs_theme(bootswatch = "lumen"),
+           
            tabPanel("Directory Map",
                     sidebarLayout(
                       sidebarPanel(
@@ -18,9 +20,11 @@ navbarPage("Hospital Ratings",
                       )
                     )
            ),
+           
            tabPanel("Star Ratings",
                     verbatimTextOutput("summary")
            ),
+           
            tabPanel("Staff & Communication",
                     fluidRow(
                       column(3, selectInput("state_staff", "Filter by State:",
@@ -47,11 +51,63 @@ navbarPage("Hospital Ratings",
                     fluidRow(
                       column(12, tableOutput("staff_table"))
                     )
-           ), 
+           ),
+           
            navbarMenu("Specialty Care",
+                      
+                      # --- BIRTHING FRIENDLY HOSPITALS ---
                       tabPanel("Birthing Friendly Hospitals",
-                               fluidRow(column(12, leafletOutput("worldMap", height = "600px")))
-                      ),
+                               
+                               # Summary stat bar
+                               fluidRow(
+                                 column(12,
+                                        div(
+                                          style = "background:#f8f9fa; border-radius:8px; padding:12px 20px;
+                                                   margin-bottom:15px; border-left:4px solid #e91e8c;",
+                                          uiOutput("birthing_summary_bar")
+                                        )
+                                 )
+                               ),
+                               
+                               # Info box
+                               fluidRow(
+                                 column(12,
+                                        div(
+                                          style = "background:#fff3f8; border:1px solid #f8bbd0; border-radius:8px;
+                                                   padding:12px 20px; margin-bottom:15px;",
+                                          tags$b("\u2139\ufe0f What is a Birthing Friendly Hospital?"),
+                                          tags$p(
+                                            "The 'Birthing Friendly' designation is awarded by the Centers for Medicare &
+                                            Medicaid Services (CMS) to hospitals that have adopted safe and recommended
+                                            maternity care practices, support breastfeeding, and provide high-quality
+                                            care for mothers and newborns.",
+                                            style = "margin:6px 0 0 0; color:#555; font-size:13px;"
+                                          )
+                                        )
+                                 )
+                               ),
+                               
+                               # Map
+                               fluidRow(column(12, leafletOutput("worldMap", height = "500px"))),
+                               
+                               hr(),
+                               
+                               # State filter
+                               fluidRow(
+                                 column(3,
+                                        selectInput("birthing_state", "Filter by State:",
+                                                    choices = c("All", sort(unique(birthing$state))),
+                                                    selected = "All")
+                                 )
+                               ),
+                               
+                               # Hospital cards
+                               fluidRow(
+                                 column(12, uiOutput("birthing_cards"))
+                               )
+                      ), # end Birthing Friendly Hospitals
+                      
+                      # --- VETERAN INPATIENT PSYCHIATRIC FACILITIES ---
                       tabPanel("Veteran Inpatient Psychiatric Facilities",
                                fluidRow(column(12, leafletOutput("vaMap", height = "600px"))),
                                hr(),
@@ -64,39 +120,38 @@ navbarPage("Hospital Ratings",
                                         uiOutput("hotlineCards")
                                  )
                                )
-                            ),
-                      tabPanel("Surgery Centers", 
+                      ), # end VA tab
+                      
+                      # --- SURGERY CENTERS ---
+                      tabPanel("Surgery Centers",
                                fluidRow(column(12, leafletOutput("SurgMap", height = "600px"))),
                                hr()
-                               )
-           ),
-          #RISK FACTORS
-            tabPanel("Risk Factors",
+                      ) # end Surgery Centers
+                      
+           ), # end Specialty Care
+           
+           # --- RISK FACTORS ---
+           tabPanel("Risk Factors",
                     tabsetPanel(
-                      tabPanel("Risk Factors",
-                      # Step 1: Guided inputs
-                      fluidRow(
-                        column(4, selectInput("state_hai", "What state are you in?",
-                                              choices = c("All", sort(unique(hai_cleaned$State))),
-                                              selected = "All")),
-                        column(4, selectInput("facility_hai", "Select a Hospital:",
-                                              choices = c("Select a hospital..." = ""),
-                                              selected = "")),
-                        column(4, selectInput("care_type", "What type of care are you seeking?",
-                                              choices = c("General",
-                                                          "Surgery",
-                                                          "Maternity",
-                                                          "Emergency")))
-                      ),
+                      id = "risk_tabs",
                       
-                      hr(),
+                      tabPanel("Find My Hospital",
+                               br(),
+                               fluidRow(
+                                 column(4, selectInput("state_hai", "What state are you in?",
+                                                       choices = c("All", sort(unique(hai_cleaned$State))),
+                                                       selected = "All")),
+                                 column(4, selectInput("facility_hai", "Select a Hospital:",
+                                                       choices = c("Select a hospital..." = ""),
+                                                       selected = "")),
+                                 column(4, selectInput("care_type", "What type of care are you seeking?",
+                                                       choices = c("General", "Surgery", "Maternity", "Emergency")))
+                               ),
+                               hr(),
+                               uiOutput("hospital_card"),
+                               uiOutput("compare_nudge")
+                      ), # end Find My Hospital
                       
-                      # Step 2: Hospital card (renders from server once facility is chosen)
-                      uiOutput("hospital_card"),
-                      
-                      # Step 3: Compare nudge (renders from server once facility is chosen)
-                      uiOutput("compare_nudge")
-                    ),
                       tabPanel("Compare Hospitals",
                                br(),
                                fluidRow(
@@ -118,11 +173,14 @@ navbarPage("Hospital Ratings",
                                ),
                                hr(),
                                fluidRow(column(12, plotOutput("hai_compare_chart", height = "500px")))
-                      )
-                    )
-           ),
+                      ) # end Compare Hospitals
+                      
+                    ) # end tabsetPanel
+           ), # end Risk Factors
+           
            navbarMenu("More",
                       tabPanel("Table", DT::dataTableOutput("table")),
                       tabPanel("About")
            )
-)
+           
+) # end navbarPage
