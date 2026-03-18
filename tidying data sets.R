@@ -1,7 +1,6 @@
 library(tidyverse)
-#seeing what's in environment
-ls()
 environmentName(environment())
+
 #tidying va ipf
 VA_IPF[["Facility.ID"]] <-NULL
 VA_IPF[["Start.Date"]] <-NULL
@@ -52,3 +51,8 @@ locations[["County/Parish"]] <- NULL
 
 #saving tidied
 write.csv(locations, "SurgCenters.csv", row.names = FALSE)
+
+#minimalizing all table data for directory
+library(dplyr)
+combined <- VA_IPF %>%
+  full_join(Timely_Effective_Care_cleaned,by = "Facility.Name")

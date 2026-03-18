@@ -9,17 +9,20 @@ locations <- Surgery_centers %>%
   geocode(full_address, method = "osm", lat = latitude, long = longitude)
 
 # SurgCenters = final edited version of locations
-
-leaflet(SurgCenters) %>%
-  addTiles() %>%
-  addMarkers(
-    lng   = ~longitude,
-    lat   = ~latitude,
-    popup = ~paste0(
-      "<b>", `Facility Name`, "</b><br>",
-      full_address
+# naming map code
+SurgMap <- 
+  leaflet(SurgCenters) %>%
+    addTiles() %>%
+    addMarkers(
+      lng   = ~longitude,
+      lat   = ~latitude,
+      popup = ~paste0(
+        "<b>", `Facility Name`, "</b><br>",
+        full_address
+      )
     )
-  )
+#to view:
+SurgMap
 
 #opening and saving new data set- needto finish
 View(locations)

@@ -404,5 +404,9 @@ function(input, output, session) {
         )
       })
       do.call(tagList, cards)
-})
+    })
+    #surgery map
+    output$SurgMap <- renderLeaflet({
+      SurgMap
+    })
 }
