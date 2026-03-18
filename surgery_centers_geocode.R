@@ -8,7 +8,9 @@ locations <- Surgery_centers %>%
         sep = ", ", remove = FALSE, na.rm = TRUE) %>%
   geocode(full_address, method = "osm", lat = latitude, long = longitude)
 
-leaflet(locations) %>%
+# SurgCenters = final edited version of locations
+
+leaflet(SurgCenters) %>%
   addTiles() %>%
   addMarkers(
     lng   = ~longitude,

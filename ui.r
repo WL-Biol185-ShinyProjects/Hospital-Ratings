@@ -70,6 +70,7 @@ navbarPage("Hospital Ratings",
           #RISK FACTORS
             tabPanel("Risk Factors",
                     tabsetPanel(
+                      tabPanel("Risk Factors",
                       # Step 1: Guided inputs
                       fluidRow(
                         column(4, selectInput("state_hai", "What state are you in?",
@@ -93,7 +94,6 @@ navbarPage("Hospital Ratings",
                       # Step 3: Compare nudge (renders from server once facility is chosen)
                       uiOutput("compare_nudge")
                     ),
-                      ),
                       tabPanel("Compare Hospitals",
                                br(),
                                fluidRow(
@@ -117,7 +117,7 @@ navbarPage("Hospital Ratings",
                                fluidRow(column(12, plotOutput("hai_compare_chart", height = "500px")))
                       )
                     )
-           )
+           ),
            navbarMenu("More",
                       tabPanel("Table", DT::dataTableOutput("table")),
                       tabPanel("About")
