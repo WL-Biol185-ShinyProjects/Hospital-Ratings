@@ -93,8 +93,117 @@ function(input, output, session) {
     staff_filtered() %>%
       select(`Facility Name`, State, all_of(selected_cols()))
   })
+  # RISK FACTORS — FIND MY HOSPITAL
+  observeEvent(input$state_hai, {
+    filtered <- if (input$state_hai == "All") {
+      hai_cleaned
+    } else {
+      hai_cleaned %>% filter(State == input$state_hai)
+    }
+    updateSelectInput(session, "facility_hai",
+                      choices = c("Select a hospital..." = "",
+                                  sort(unique(filtered$Facility.Name))))
+  })
   
-  #Hospital Associated Infections
+  # CHUNK 2: Render the hospital card
+  output$hospital_card <- renderUI({
+    req(input$facility_hai != "")
+    
+    hosp_data <- hai_cleaned %>%
+      filter(Facility.Name == input$facility_hai)
+    
+    req(nrow(hosp_data) > 0)
+    
+    hosp_data <- hosp_data %>%
+      mutate(
+        dot_color = case_when(
+          Score < 1.0  ~ "#2ecc71",
+          Score == 1.0 ~ "#f39c12",
+          Score > 1.0  ~ "#e74c3c",
+          TRUE         ~ "#aaaaaa"
+        ),
+        performance_label = case_when(
+          Score < 1.0  ~ "Better than national average",
+          Score == 1.0 ~ "At national average",
+          Score > 1.0  ~ "Worse than national average",
+          TRUE         ~ "No data available"
+        )
+      )
+    
+    avg_sir      <- mean(hosp_data$Score, na.rm = TRUE)
+    better_count <- sum(hosp_data$Score < 1.0, na.rm = TRUE)
+    total_count  <- nrow(hosp_data)
+    
+    overall_label <- case_when(
+      avg_sir < 0.5  ~ "Excellent",
+      avg_sir < 1.0  ~ "Good",
+      avg_sir < 1.5  ~ "Fair",
+      TRUE           ~ "Poor"
+    )
+    
+    overall_color <- case_when(
+      avg_sir < 0.5  ~ "#2ecc71",
+      avg_sir < 1.0  ~ "#f39c12",
+      avg_sir < 1.5  ~ "#e67e22",
+      TRUE           ~ "#e74c3c"
+    )
+    
+    div(
+      style = "background:#fff; border:1px solid #ddd; border-radius:10px; padding:20px; margin-top:10px;",
+      
+      h3(input$facility_hai, style = "margin-top:0;"),
+      
+      div(
+        style = paste0("background:", overall_color, "; color:white; padding:8px 14px;",
+                       "border-radius:6px; display:inline-block; font-size:15px;"),
+        strong(overall_label), " — Overall Infection Safety"
+      ),
+      
+      hr(),
+      
+      # Traffic light rows per infection type
+      lapply(1:nrow(hosp_data), function(i) {
+        div(style = "display:flex; align-items:center; margin:10px 0;",
+            div(style = paste0("width:16px; height:16px; border-radius:50%; background:",
+                               hosp_data$dot_color[i], "; margin-right:12px; flex-shrink:0;")),
+            div(
+              strong(hosp_data$Infection.Type[i]),
+              br(),
+              span(hosp_data$performance_label[i], style = "color:#555; font-size:13px;")
+            )
+        )
+      }),
+      
+      hr(),
+      
+      p(
+        paste0("This hospital performs better than the national average in ",
+               better_count, " out of ", total_count, " tracked infection categories."),
+        style = "font-size:15px; color:#333;"
+      )
+    )
+  })
+  
+  # CHUNK 3: Compare nudge button
+  output$compare_nudge <- renderUI({
+    req(input$facility_hai != "")
+    
+    div(
+      style = "margin-top:15px; padding:12px; background:#f0f4ff;
+               border-radius:8px; border-left:4px solid #3498db;",
+      span("👉 Want to see how this hospital compares to others nearby?  "),
+      actionButton("go_compare", "Compare Hospitals →",
+                   style = "background:#3498db; color:white; border:none;
+                            border-radius:4px; padding:6px 12px; margin-left:8px;")
+    )
+  })
+  
+  # Wire compare button to switch tabs
+  observeEvent(input$go_compare, {
+    updateTabsetPanel(session, inputId = "risk_tabs", selected = "Compare Hospitals")
+  })  
+  # RISK Factors - Compare Hospitals
+  
   hai_filtered <- reactive({
     data <- hai_cleaned
     if (input$state_hai != "All") {
