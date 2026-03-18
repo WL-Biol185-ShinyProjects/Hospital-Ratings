@@ -104,11 +104,162 @@ function(input, output, session) {
                       choices = c("Select a hospital..." = "",
                                   sort(unique(filtered$Facility.Name))))
   })
-  
+ 
+   care_type_infections <- reactive({
+    switch(input$care_type,
+           "General"   = c("MRSA Blood Infection",
+                           "C. Difficile Infection",
+                           "Central Line Infection",
+                           "Urinary Tract Infection"),
+           "Surgery"   = c("Surgical Site - Colon",
+                           "Surgical Site - Hysterectomy",
+                           "Central Line Infection",
+                           "MRSA Blood Infection"),
+           "Maternity" = c("Surgical Site - Hysterectomy",
+                           "Urinary Tract Infection",
+                           "C. Difficile Infection"),
+           "Emergency" = c("MRSA Blood Infection",
+                           "C. Difficile Infection",
+                           "Central Line Infection",
+                           "Urinary Tract Infection")
+    )
+  })
   # CHUNK 2: Render the hospital card
   output$hospital_card <- renderUI({
     req(input$facility_hai != "")
     
+    # --- NO HOSPITAL SELECTED: show state summary table ---
+    if (input$facility_hai == "" || input$facility_hai == "Select a hospital...") {
+      
+      state_data <- if (input$state_hai == "All") {
+        hai_cleaned
+      } else {
+        hai_cleaned %>% filter(State == input$state_hai)
+      }
+      
+      # Summarize by hospital
+      summary_table <- state_data %>%
+        group_by(Facility.Name, State) %>%
+        summarise(
+          Avg_SIR = round(mean(Score, na.rm = TRUE), 2),
+          Better  = sum(Score < 1.0, na.rm = TRUE),
+          Total   = n(),
+          .groups = "drop"
+        ) %>%
+        mutate(
+          Safety_Rating = case_when(
+            Avg_SIR < 0.5  ~ "⭐⭐⭐⭐ Excellent",
+            Avg_SIR < 1.0  ~ "⭐⭐⭐ Good",
+            Avg_SIR < 1.5  ~ "⭐⭐ Fair",
+            TRUE           ~ "⭐ Poor"
+          ),
+          Summary = paste0(Better, " of ", Total, " categories better than average")
+        ) %>%
+        arrange(Avg_SIR) %>%
+        select(
+          "Hospital"      = Facility.Name,
+          "State"         = State,
+          "Safety Rating" = Safety_Rating,
+          "Summary"       = Summary
+        )
+      
+      div(
+        style = "margin-top: 10px;",
+        h4(
+          if (input$state_hai == "All") "All Hospitals — Select a hospital above for details"
+          else paste("Hospitals in", input$state_hai, "— Select one above for details"),
+          style = "color: #333;"
+        ),
+        p("Sorted by best infection safety first.", style = "color:#777; font-size:13px;"),
+        DT::renderDataTable(
+          DT::datatable(summary_table,
+                        options = list(pageLength = 10, scrollX = TRUE),
+                        rownames = FALSE)
+        )
+      )
+      
+    } else {
+      
+      # --- HOSPITAL SELECTED: show card ---
+      hosp_data <- hai_cleaned %>%
+        filter(Facility.Name == input$facility_hai,
+               Infection.Type %in% care_type_infections())
+      
+      req(nrow(hosp_data) > 0)
+      
+      hosp_data <- hosp_data %>%
+        mutate(
+          dot_color = case_when(
+            Score < 1.0  ~ "#2ecc71",
+            Score == 1.0 ~ "#f39c12",
+            Score > 1.0  ~ "#e74c3c",
+            TRUE         ~ "#aaaaaa"
+          ),
+          performance_label = case_when(
+            Score < 1.0  ~ "Better than national average",
+            Score == 1.0 ~ "At national average",
+            Score > 1.0  ~ "Worse than national average",
+            TRUE         ~ "No data available"
+          )
+        )
+      
+      avg_sir      <- mean(hosp_data$Score, na.rm = TRUE)
+      better_count <- sum(hosp_data$Score < 1.0, na.rm = TRUE)
+      total_count  <- nrow(hosp_data)
+      
+      overall_label <- case_when(
+        avg_sir < 0.5  ~ "Excellent",
+        avg_sir < 1.0  ~ "Good",
+        avg_sir < 1.5  ~ "Fair",
+        TRUE           ~ "Poor"
+      )
+      
+      overall_color <- case_when(
+        avg_sir < 0.5  ~ "#2ecc71",
+        avg_sir < 1.0  ~ "#f39c12",
+        avg_sir < 1.5  ~ "#e67e22",
+        TRUE           ~ "#e74c3c"
+      )
+      
+      div(
+        style = "background:#fff; border:1px solid #ddd; border-radius:10px; padding:20px; margin-top:10px;",
+        
+        h3(input$facility_hai, style = "margin-top:0;"),
+        
+        # Care type label
+        p(paste0("Showing infection types relevant to: ", strong(input$care_type)),
+          style = "color:#555; font-size:13px; margin-bottom:10px;"),
+        
+        div(
+          style = paste0("background:", overall_color, "; color:white; padding:8px 14px;",
+                         "border-radius:6px; display:inline-block; font-size:15px;"),
+          strong(overall_label), " — Overall Infection Safety"
+        ),
+        
+        hr(),
+        
+        lapply(1:nrow(hosp_data), function(i) {
+          div(style = "display:flex; align-items:center; margin:10px 0;",
+              div(style = paste0("width:16px; height:16px; border-radius:50%; background:",
+                                 hosp_data$dot_color[i], "; margin-right:12px; flex-shrink:0;")),
+              div(
+                strong(hosp_data$Infection.Type[i]),
+                br(),
+                span(hosp_data$performance_label[i], style = "color:#555; font-size:13px;")
+              )
+          )
+        }),
+        
+        hr(),
+        
+        p(
+          paste0("This hospital performs better than the national average in ",
+                 better_count, " out of ", total_count, " tracked infection categories."),
+          style = "font-size:15px; color:#333;"
+        )
+      )
+    }
+  }) 
     hosp_data <- hai_cleaned %>%
       filter(Facility.Name == input$facility_hai)
     
@@ -184,7 +335,6 @@ function(input, output, session) {
     )
   })
   
-  # CHUNK 3: Compare nudge button
   output$compare_nudge <- renderUI({
     req(input$facility_hai != "")
     
