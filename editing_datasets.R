@@ -52,7 +52,7 @@ locations[["County/Parish"]] <- NULL
 #saving tidied
 write.csv(locations, "SurgCenters.csv", row.names = FALSE)
 
-#minimalizing all table data for directory
+#minimalizing all table data for directory (HAVE NOT STARTED)
 library(dplyr)
 combined <- VA_IPF %>%
   full_join(Timely_Effective_Care_cleaned,by = "Facility.Name")

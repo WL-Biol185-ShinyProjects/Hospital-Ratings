@@ -3,6 +3,7 @@ library(tidygeocoder)
 library(dplyr)
 library(tidyr)
 
+#coding surg ctrs
 locations <- Surgery_centers %>%
   unite("full_address", `Address`, `City/Town`, `State`, `ZIP Code`,
         sep = ", ", remove = FALSE, na.rm = TRUE) %>%
@@ -28,3 +29,6 @@ SurgMap
 View(locations)
 write.csv(locations, "locations.csv", row.names = FALSE)
 file.rename("locations.csv", "surg_centers")
+
+
+#CODING DIRECTORY
