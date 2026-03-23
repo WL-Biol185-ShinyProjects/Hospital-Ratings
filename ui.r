@@ -160,7 +160,8 @@ navbarPage("Hospital Ratings",
                       tabPanel("Compare Hospitals",
                                br(),
                                fluidRow(
-                                 column(3, selectInput("state_hai_compare", "Filter by State:",
+                                 column(3, selectInput("state_hai_compare",
+                                                       "Filter by State:",
                                                        choices = c("All", sort(unique(hai_cleaned$State))),
                                                        selected = "All")),
                                  column(9, shinyWidgets::checkboxGroupButtons(
@@ -182,17 +183,20 @@ navbarPage("Hospital Ratings",
                                    ),
                                    justified = TRUE,
                                    checkIcon = list(yes = icon("check"))
-                                 )),
+                                 ))
+                               ),
                                hr(),
-                               fluidRow(column(12, uiOutput("gauge_grid")))
+                               # Gauge grid: 3 gauges side by side
+                               # Dynamic gauges grid
+                               uiOutput("gauge_grid")
+                      )
                       ) # end Compare Hospitals
                       
                     ) # end tabsetPanel
-           ), # end Risk Factors
-           
-           navbarMenu("More",
-                      tabPanel("Table", DT::dataTableOutput("table")),
-                      tabPanel("About")
-                    )
-           )
+           ) # end Risk Factors
+
+navbarMenu("More",
+           tabPanel("Table", DT::dataTableOutput("table")),
+           tabPanel("About")
+
 ) # end navbarPage
