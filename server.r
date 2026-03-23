@@ -2,6 +2,7 @@ library(shiny)
 library(leaflet)
 library(tidyverse)
 library(DT)
+library(echarts4r)
 
 staff_rating <- read.csv("staff_rating.csv", row.names = 1, check.names = FALSE)
 birthing <- read.csv("Birthing_Friendly_Hospitals_Geocoded.csv")
@@ -277,37 +278,117 @@ function(input, output, session) {
           updateTabsetPanel(session, inputId = "risk_tabs", selected = "Compare Hospitals")
         }) 
         hai_compare_filtered <- reactive({
-          data <- hai_cleaned
-          if (input$state_hai_compare != "All") {
-            data <- data %>% filter(State == input$state_hai_compare)
+          req(input$state_hai_compare, input$infection_type_compare)
+          
+          df <- hai_cleaned
+          
+          # MULTI-state support (works with pickerInput)
+          if (!is.null(input$state_hai_compare)) {
+            df <- df %>% filter(State %in% input$state_hai_compare)
           }
-          data <- data %>% filter(Infection.Type %in% input$infection_type_compare)
-          data
+          
+          df <- df %>%
+            filter(Infection.Type %in% input$infection_type_compare) %>%
+            group_by(State, Infection.Type) %>%
+            summarise(
+              sir = mean(Score, na.rm = TRUE),
+              .groups = "drop"
+            )
+          
+          df
+        }) 
+        output$gauge_grid <- renderUI({
+          
+          df <- filtered_hai()
+          
+          if (nrow(df) == 0) {
+            return(h4("No data available for selected filters"))
+          }
+          
+          infections <- unique(df$Infection.Type)
+          
+          tagList(
+            lapply(infections, function(inf) {
+              
+              sub <- df %>%
+                filter(Infection.Type == inf) %>%
+                arrange(sir)
+              
+              tagList(
+                h3(inf),
+                
+                fluidRow(
+                  lapply(1:nrow(sub), function(i) {
+                    
+                    row <- sub[i,]
+                    id <- paste0("gauge_", gsub(" ", "_", inf), "_", i)
+                    
+                    column(
+                      width = 3,
+                      div(
+                        style = "text-align:center;",
+                        h5(row$State),
+                        echarts4rOutput(id, height = "220px")
+                      )
+                    )
+                  })
+                ),
+                hr()
+              )
+            })
+          )
         })
-        
-        output$hai_compare_chart <- renderPlot({
-          req(input$infection_type_compare)
-          hai_compare_filtered() %>%
-            ggplot(aes(x = Infection.Type, y = Score, fill = Infection.Type)) +
-            geom_boxplot(outlier.shape = 21, outlier.size = 1.5) +
-            geom_hline(yintercept = 1, linetype = "dashed", color = "black", linewidth = 1) +
-            annotate("text", x = 0.6, y = 1.05,
-                     label = "National Average (1.0) — Lower is Better",
-                     color = "black", size = 3.5, hjust = 0) +
-            coord_flip() +
-            labs(
-              title = if (input$state_hai_compare == "All") {
-                "Infection Rate Distribution — All Hospitals Nationwide"
-              } else {
-                paste("Infection Rate Distribution —", input$state_hai_compare, "Hospitals")
-              },
-              subtitle = "Each box shows the spread of scores across all hospitals in the selected area",
-              x = "", y = "Standardized Infection Ratio (SIR)"
-            ) +
-            theme_minimal() +
-            theme(legend.position = "none",
-                  plot.subtitle = element_text(size = 9, color = "gray50"),
-                  axis.text.y = element_text(size = 11))
+        observe({
+          
+          df <- filtered_hai()
+          infections <- unique(df$Infection.Type)
+          
+          for (inf in infections) {
+            
+            sub <- df %>% filter(Infection.Type == inf)
+            
+            for (i in 1:nrow(sub)) {
+              
+              local({
+                
+                row <- sub[i,]
+                id <- paste0("gauge_", gsub(" ", "_", inf), "_", i)
+                
+                output[[id]] <- renderEcharts4r({
+                  
+                  e_charts() %>%
+                    e_gauge(
+                      value = round(row$sir, 2),
+                      min = 0,
+                      max = 2,
+                      
+                      axisLine = list(
+                        lineStyle = list(
+                          width = 12,
+                          color = list(
+                            list(0.5, "#22c55e"),  # green
+                            list(0.6, "#f59e0b"),  # amber
+                            list(1, "#ef4444")     # red
+                          )
+                        )
+                      ),
+                      
+                      pointer = list(width = 4),
+                      
+                      detail = list(
+                        formatter = "{value}",
+                        fontSize = 16
+                      )
+                    ) %>%
+                    e_title(
+                      text = NULL,
+                      subtext = paste("SIR:", round(row$sir, 2)),
+                      left = "center"
+                    )
+                })
+              })
+            }
+          }
         })
   
   # Birthing Friendly Hospitals Map and Directions

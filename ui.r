@@ -1,5 +1,10 @@
 library(markdown)
 library(leaflet)
+library(dplyr)
+library(echarts4r)  # ( need this for gauges)
+library(shinyWidgets)
+library(DT)
+library(bslib)
 
 staff_rating <- read.csv("staff_rating.csv")
 VA_IPF_geocoded <- read.csv("VA_IPF_geocoded.csv")
@@ -158,21 +163,28 @@ navbarPage("Hospital Ratings",
                                  column(3, selectInput("state_hai_compare", "Filter by State:",
                                                        choices = c("All", sort(unique(hai_cleaned$State))),
                                                        selected = "All")),
-                                 column(9, checkboxGroupInput("infection_type_compare", "Select Infection Types:",
-                                                              choices = c("Central Line Infection",
-                                                                          "Urinary Tract Infection",
-                                                                          "Surgical Site - Colon",
-                                                                          "Surgical Site - Hysterectomy",
-                                                                          "MRSA Blood Infection",
-                                                                          "C. Difficile Infection"),
-                                                              selected = c("Central Line Infection",
-                                                                           "Urinary Tract Infection",
-                                                                           "MRSA Blood Infection",
-                                                                           "C. Difficile Infection"),
-                                                              inline = TRUE))
-                               ),
+                                 column(9, shinyWidgets::checkboxGroupButtons(
+                                   inputId = "infection_type_compare",
+                                   label = "Select Infection Types:",
+                                   choices = c(
+                                     "Central Line Infection",
+                                     "Urinary Tract Infection",
+                                     "Surgical Site - Colon",
+                                     "Surgical Site - Hysterectomy",
+                                     "MRSA Blood Infection",
+                                     "C. Difficile Infection"
+                                   ),
+                                   selected = c(
+                                     "Central Line Infection",
+                                     "Urinary Tract Infection",
+                                     "MRSA Blood Infection",
+                                     "C. Difficile Infection"
+                                   ),
+                                   justified = TRUE,
+                                   checkIcon = list(yes = icon("check"))
+                                 )),
                                hr(),
-                               fluidRow(column(12, plotOutput("hai_compare_chart", height = "500px")))
+                               fluidRow(column(12, uiOutput("gauge_grid")))
                       ) # end Compare Hospitals
                       
                     ) # end tabsetPanel
@@ -181,6 +193,6 @@ navbarPage("Hospital Ratings",
            navbarMenu("More",
                       tabPanel("Table", DT::dataTableOutput("table")),
                       tabPanel("About")
+                    )
            )
-           
 ) # end navbarPage
