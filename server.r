@@ -7,6 +7,7 @@ staff_rating <- read.csv("staff_rating.csv", row.names = 1, check.names = FALSE)
 birthing <- read.csv("Birthing_Friendly_Hospitals_Geocoded.csv")
 VA_IPF_geocoded <- read.csv("VA_IPF_geocoded.csv")
 hai_cleaned <- read.csv("hai_cleaned.csv")
+SurgCenters <- read.csv("SurgCenters.csv")
 function(input, output, session) {
   
   output$plot <- renderPlot({
@@ -465,6 +466,15 @@ function(input, output, session) {
     })
     #surgery map
     output$SurgMap <- renderLeaflet({
-      SurgMap
+      leaflet(SurgCenters) %>%
+        addTiles() %>%
+        addMarkers(
+          lng   = ~longitude,
+          lat   = ~latitude,
+          popup = ~paste0(
+            "<b>", SurgCenters[["Facility Name"]], "</b><br>",
+            full_address
+          )
+        )
     })
 }
