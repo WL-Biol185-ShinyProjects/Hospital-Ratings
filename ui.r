@@ -9,6 +9,7 @@ staff_rating <- read.csv("staff_rating.csv")
 VA_IPF_geocoded <- read.csv("VA_IPF_geocoded.csv")
 hai_cleaned <- read.csv("hai_cleaned.csv")
 birthing <- read.csv("Birthing_Friendly_Hospitals_Geocoded.csv")
+SurgCenters <- read.csv("SurgCenters.csv")
 
 navbarPage("Hospital Ratings",
            theme = bslib::bs_theme(bootswatch = "lumen"),
@@ -129,7 +130,13 @@ navbarPage("Hospital Ratings",
                       # --- SURGERY CENTERS ---
                       tabPanel("Surgery Centers",
                                fluidRow(column(12, leafletOutput("SurgMap", height = "600px"))),
-                               hr()
+                               hr(),
+                               fluidRow(
+                                 column(3, selectInput("state_surg", "Filter by State:",
+                                                       choices = c("All", sort(unique(SurgCenters$State))),
+                                                       selected = "All"))
+                               ),
+                               fluidRow(column(12, uiOutput("surg_cards")))
                       ) # end Surgery Centers
                       
            ), # end Specialty Care
@@ -188,14 +195,14 @@ navbarPage("Hospital Ratings",
                                # Gauge grid: 3 gauges side by side
                                # Dynamic gauges grid
                                uiOutput("gauge_grid")
-                      )
+                      
                       ) # end Compare Hospitals
                       
                     ) # end tabsetPanel
-           ) # end Risk Factors
+           ), # end Risk Factors
 
 navbarMenu("More",
            tabPanel("Table", DT::dataTableOutput("table")),
            tabPanel("About")
-
+  )
 ) # end navbarPage

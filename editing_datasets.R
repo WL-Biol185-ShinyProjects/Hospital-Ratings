@@ -54,5 +54,54 @@ write.csv(locations, "SurgCenters.csv", row.names = FALSE)
 
 #minimalizing all table data for directory (HAVE NOT STARTED)
 library(dplyr)
-combined <- VA_IPF %>%
-  full_join(Timely_Effective_Care_cleaned,by = "Facility.Name")
+VA_IPF_geocoded           <- read.csv("VA_IPF_geocoded.csv")
+Timely_Effective_Care     <- read.csv("Timely_Effective_Care_cleaned.csv")
+SurgCenters               <- read.csv("SurgCenters.csv")
+staff_rating              <- read.csv("staff_rating.csv")
+person_community_engage <- read.csv("hvbp_person_and_community_engagement.csv")
+hosp_info               <- read.csv("hosp.general.info.csv")
+HAI                     <- read.csv("hai_cleaned.csv")
+readmissions            <- read.csv("FY_2025_Hospital_Readmissions_Reduction_Program_Hospital.csv")
+birthing                <- read.csv("Birthing_Friendly_Hospitals_Geocoded.csv")
+
+
+combined <- bind_rows(
+  VA_IPF_geocoded         %>% select(-any_of(c("Facility.ID", "Score"))),
+  Timely_Effective_Care   %>% select(-any_of(c("Facility.ID", "Score"))),
+  SurgCenters             %>% select(-any_of(c("Facility.ID", "Score"))),
+  staff_rating            %>% select(-any_of(c("Facility.ID", "Score"))),
+  person_community_engage %>% select(-any_of(c("Facility.ID", "Score"))),
+  hosp_info               %>% select(-any_of(c("Facility.ID", "Score"))),
+  HAI                     %>% select(-any_of(c("Facility.ID", "Score"))),
+  readmissions            %>% select(-any_of(c("Facility.ID", "Score"))),
+  birthing                %>% select(-any_of(c("Facility.ID", "Score")))
+) %>%
+  mutate(
+    latitude  = coalesce(latitude, lat),
+    longitude = coalesce(longitude, lon)
+  ) %>%
+  select(-any_of(c("lat", "lon"))) %>%
+  mutate(
+    Facility.Name     = coalesce(Facility.Name, name),
+    full_address      = coalesce(full_address, addr),
+    City.Town         = coalesce(City.Town, city),
+    State             = coalesce(State, state),
+    ZIP.Code          = coalesce(ZIP.Code, zip),
+    Telephone.Number  = coalesce(Telephone.Number, phone)
+  ) %>%
+  select(-any_of(c("name", "addr", "city", "state", "zip", "phone"))) %>%
+  distinct(Facility.Name, .keep_all = TRUE)
+  
+view(combined)
+colnames(combined)
+
+  distinct(Facility.Name, .keep_all = TRUE)
+#combining lat and long columns
+combined <- combined %>%
+  mutate(
+    latitude  = coalesce(latitude, lat),
+    longitude = coalesce(longitude, lon)
+  ) %>%
+  select(-lat, -lon)
+write.csv(combined, "combined.csv", row.names = FALSE)
+
