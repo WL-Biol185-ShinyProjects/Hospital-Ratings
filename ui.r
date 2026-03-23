@@ -1,7 +1,6 @@
 library(markdown)
 library(leaflet)
 library(dplyr)
-library(echarts4r)  # ( need this for gauges)
 library(shinyWidgets)
 library(DT)
 library(bslib)
