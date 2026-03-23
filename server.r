@@ -468,9 +468,12 @@ function(input, output, session) {
     output$SurgMap <- renderLeaflet({
       leaflet(SurgCenters) %>%
         addTiles() %>%
-        addMarkers(
+        addAwesomeMarkers(
           lng   = ~longitude,
           lat   = ~latitude,
+          icon  = awesomeIcons(
+            icon = "hospital"
+          ),
           popup = ~paste0(
             "<b>", SurgCenters[["Facility Name"]], "</b><br>",
             full_address
