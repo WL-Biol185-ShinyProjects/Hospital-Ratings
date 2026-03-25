@@ -389,8 +389,9 @@ function(input, output, session) {
      do.call(tagList, cards)
    })
    
-    #surgery map
-    output$SurgMap <- renderLeaflet({
+    #---------------- Surgery Centers ----------------
+   #map 
+   output$SurgMap <- renderLeaflet({
       leaflet(SurgCenters) %>%
         addTiles() %>%
         addAwesomeMarkers(
@@ -405,4 +406,54 @@ function(input, output, session) {
           )
         )
     })
+   #cards
+   output$surg_cards <- renderUI({
+     data <- SurgCenters
+     if (input$state_surg != "All") {
+       data <- data %>% filter(State == input$state_surg)
+     }
+     
+     if (nrow(data) == 0) {
+       return(p("No surgery centers found for the selected state."))
+     }
+     
+     cards <- lapply(1:nrow(data), function(i) {
+       div(
+         style = "background:#fff; border:1px solid #b3d1f7; border-radius:10px;
+          padding:15px; margin:10px; display:inline-block; width:280px;
+          vertical-align:top; box-shadow:2px 2px 5px rgba(0,0,0,0.08);",
+         
+         h4(style = "color:#1a3a5c; margin-top:0; font-size:15px;",
+            "🏥 ", data[["Facility Name"]][i]),  # ✅ exact column name
+         
+         p(style = "color:#555; font-size:13px; margin:4px 0;",
+           "📍 ", data$full_address[i]),
+         
+         if (isTRUE(!is.na(data[["Telephone Number"]][i]) && data[["Telephone Number"]][i] != "")) {
+           p(style = "color:#555; font-size:13px; margin:4px 0;",
+             "📞 ", data[["Telephone Number"]][i])  # ✅ exact column name
+         },
+         
+         tags$a(
+           href = paste0("https://www.google.com/maps/dir/?api=1&destination=",
+                         data$latitude[i], ",", data$longitude[i]),
+           target = "_blank",
+           class = "btn btn-sm",
+           style = "background:#1a3a5c; color:white; border:none;
+            margin-top:6px; margin-right:4px;",
+           "🗺️ Directions"
+         ),
+         
+         if (isTRUE(!is.na(data[["Telephone Number"]][i]) && data[["Telephone Number"]][i] != "")) {
+           tags$a(
+             href = paste0("tel:", gsub("[^0-9]", "", data[["Telephone Number"]][i])),
+             class = "btn btn-sm",
+             style = "background:#e63946; color:white; border:none; margin-top:6px;",
+             "📞 Call"
+           )
+         }
+       )
+     })
+     do.call(tagList, cards)
+   })
 }
