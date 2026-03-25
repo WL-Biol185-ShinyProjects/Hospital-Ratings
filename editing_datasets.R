@@ -105,3 +105,4 @@ combined <- combined %>%
   select(-lat, -lon)
 write.csv(combined, "combined.csv", row.names = FALSE)
 
+# FOR DIRECTORY DATA:
