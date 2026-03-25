@@ -10,6 +10,8 @@ VA_IPF_geocoded <- read.csv("VA_IPF_geocoded.csv")
 hai_cleaned <- read.csv("hai_cleaned.csv")
 birthing <- read.csv("Birthing_Friendly_Hospitals_Geocoded.csv")
 SurgCenters <- read.csv("SurgCenters.csv")
+hvbp <- read.csv("hvbp_person_and_community_engagement.csv", check.names = FALSE)
+
 
 navbarPage("Hospital Ratings",
            theme = bslib::bs_theme(bootswatch = "lumen"),
@@ -31,30 +33,53 @@ navbarPage("Hospital Ratings",
            ),
            
            tabPanel("Staff & Communication",
-                    fluidRow(
-                      column(3, selectInput("state_staff", "Filter by State:",
-                                            choices = c("All", sort(unique(staff_rating$State))),
-                                            selected = "All")),
-                      column(3, selectInput("facility_staff", "Choose Facility:",
-                                            choices = c("All", sort(unique(staff_rating$`Facility Name`))),
-                                            selected = "All")),
-                      column(6, checkboxGroupInput("measure", "Select Measures:",
-                                                   choices = c(
-                                                     "Staff Care Quality" = "staff",
-                                                     "Communication" = "communication",
-                                                     "Facility Rating" = "rating",
-                                                     "Recommendation" = "recommend"
-                                                   ),
-                                                   selected = c("staff", "communication", "rating", "recommend"),
-                                                   inline = TRUE))
-                    ),
-                    hr(),
-                    fluidRow(
-                      column(12, plotOutput("staff_chart", height = "500px"))
-                    ),
-                    hr(),
-                    fluidRow(
-                      column(12, tableOutput("staff_table"))
+                    tabsetPanel(
+                      tabPanel("Patient Experience",
+                               fluidRow(
+                                 column(3, selectInput("state_staff", "Filter by State:",
+                                                       choices = c("All", sort(unique(staff_rating$State))),
+                                                       selected = "All")),
+                                 column(9, checkboxGroupInput("measure", "Select Measures:",
+                                                              choices = c(
+                                                                "Staff Care Quality" = "staff",
+                                                                "Communication"      = "communication",
+                                                                "Facility Rating"    = "rating",
+                                                                "Recommendation"     = "recommend"
+                                                              ),
+                                                              selected = c("staff", "communication", "rating", "recommend"),
+                                                              inline = TRUE))
+                               ),
+                               hr(),
+                               fluidRow(column(12, plotOutput("staff_chart", height = "400px"))),
+                               hr(),
+                               fluidRow(column(12, tableOutput("staff_table")))
+                      ),
+                      
+                      tabPanel("Engagement Scores",
+                               fluidRow(
+                                 column(3, selectInput("state_hvbp", "Filter by State:",
+                                                       choices = c("All", sort(unique(hvbp_clean$State))),
+                                                       selected = "All")),
+                                 column(3, selectInput("facility_hvbp", "Look Up a Hospital:",
+                                                       choices = c("Select a hospital..." = ""),
+                                                       selected = ""))
+                               ),
+                               hr(),
+                               fluidRow(
+                                 column(12,
+                                        div(style = "background:#f8f9fa; border-radius:8px; padding:12px 20px; margin-bottom:15px;",
+                                            h5("How to read this chart:", style = "margin:0 0 4px 0;"),
+                                            p("Each cell shows the average patient-reported performance rate for hospitals in that tier.
+                Tiers are based on each hospital's overall HCAHPS base score.
+                Green = stronger performance, Red = weaker performance.",
+                                              style = "margin:0; font-size:13px; color:#555;")
+                                        )
+                                 )
+                               ),
+                               fluidRow(column(12, plotOutput("hvbp_heatmap", height = "350px"))),
+                               hr(),
+                               uiOutput("hvbp_hospital_card")
+                      )
                     )
            ),
            

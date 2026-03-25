@@ -12,6 +12,8 @@ birthing <- read.csv("Birthing_Friendly_Hospitals_Geocoded.csv")
 VA_IPF_geocoded <- read.csv("VA_IPF_geocoded.csv")
 hai_cleaned <- read.csv("hai_cleaned.csv")
 SurgCenters <- read.csv("SurgCenters.csv")
+
+
 function(input, output, session) {
   
   output$plot <- renderPlot({
@@ -26,7 +28,8 @@ function(input, output, session) {
     DT::datatable(cars)
   })
   
-  # Update facility dropdown when state changes
+# STAFF RATINGS 
+
   observeEvent(input$state_staff, {
     if (input$state_staff == "All") {
       facilities <- c("All", sort(unique(staff_rating$`Facility Name`)))
@@ -36,69 +39,87 @@ function(input, output, session) {
     updateSelectInput(session, "facility_staff", choices = facilities, selected = "All")
   })
   
-  # Filtered data
   staff_filtered <- reactive({
     data <- staff_rating
-    if (input$state_staff != "All") {
-      data <- data %>% filter(State == input$state_staff)
-    }
-    if (input$facility_staff != "All") {
-      data <- data %>% filter(`Facility Name` == input$facility_staff)
-    }
+    if (input$state_staff != "All") data <- data %>% filter(State == input$state_staff)
     data
   })
   
-  # Selected columns based on chosen measures
-  selected_cols <- reactive({
-    cols <- c()
-    if ("staff" %in% input$measure) {
-      cols <- c(cols,
-                "Patients who reported that staff definitely gave care in a professional way and the facility was clean",
-                "Patients who reported that staff somewhat gave care in a professional way or the facility was somewhat clean",
-                "Patients who reported that staff did not give care in a professional way or the facility was not clean")
-    }
-    if ("communication" %in% input$measure) {
-      cols <- c(cols,
-                "Patients who reported that staff definitely communicated about what to expect during and after the procedure",
-                "Patients who reported that staff somewhat communicated about what to expect during and after the procedure",
-                "Patients who reported that staff did not communicate about what to expect during and after the procedure")
-    }
-    if ("rating" %in% input$measure) {
-      cols <- c(cols,
-                "Patients who gave the facility a rating of 9 or 10 on a scale from 0 (lowest) to 10 (highest)",
-                "Patients who gave the facility a rating of 7 or 8 on a scale from 0 (lowest) to 10 (highest)",
-                "Patients who gave the facility a rating of 0 to 6 on a scale from 0 (lowest) to 10 (highest)")
-    }
-    if ("recommend" %in% input$measure) {
-      cols <- c(cols,
-                "Patients who reported YES they would DEFINITELY recommend the facility to family or friends",
-                "Patients who reported PROBABLY YES they would recommend the facility to family or friends",
-                "Patients who reported NO, they would not recommend the facility to family or friends")
-    }
-    cols
-  })
+  measure_labels <- c(
+    "Patients who reported that staff definitely gave care in a professional way and the facility was clean"       = "Staff Care",
+    "Patients who reported that staff definitely communicated about what to expect during and after the procedure" = "Communication",
+    "Patients who gave the facility a rating of 9 or 10 on a scale from 0 (lowest) to 10 (highest)"              = "High Rating",
+    "Patients who reported YES they would DEFINITELY recommend the facility to family or friends"                  = "Would Recommend"
+  )
   
-  # Chart
+  pos_cols <- c(
+    "Patients who reported that staff definitely gave care in a professional way and the facility was clean",
+    "Patients who reported that staff definitely communicated about what to expect during and after the procedure",
+    "Patients who gave the facility a rating of 9 or 10 on a scale from 0 (lowest) to 10 (highest)",
+    "Patients who reported YES they would DEFINITELY recommend the facility to family or friends"
+  )
+  
   output$staff_chart <- renderPlot({
     req(input$measure)
-    staff_filtered() %>%
-      select(`Facility Name`, all_of(selected_cols())) %>%
-      pivot_longer(-`Facility Name`, names_to = "Category", values_to = "Percent") %>%
-      ggplot(aes(x = `Facility Name`, y = Percent, fill = Category)) +
-      geom_bar(stat = "identity", position = "dodge") +
-      coord_flip() +
-      labs(title = "Staff & Communication Ratings", x = "", y = "Percent of Patients") +
-      theme_minimal() +
-      theme(legend.position = "bottom",
-            legend.text = element_text(size = 7))
-
-})
-  # Table
+    
+    active_cols <- pos_cols[
+      c("staff", "communication", "rating", "recommend") %in% input$measure
+    ]
+    req(length(active_cols) > 0)
+    
+    data <- staff_filtered() %>%
+      select(`Facility Name`, all_of(active_cols)) %>%
+      rowwise() %>%
+      mutate(avg_score = mean(c_across(all_of(active_cols)), na.rm = TRUE)) %>%
+      ungroup() %>%
+      mutate(Tier = case_when(
+        avg_score >= 80 ~ "Excellent",
+        avg_score >= 65 ~ "Good",
+        avg_score >= 50 ~ "Fair",
+        TRUE            ~ "Poor"
+      ))
+    
+    heatmap_data <- data %>%
+      group_by(Tier) %>%
+      summarise(across(all_of(active_cols), ~ mean(.x, na.rm = TRUE))) %>%
+      pivot_longer(-Tier, names_to = "Measure", values_to = "Score") %>%
+      mutate(
+        Measure = recode(Measure, !!!measure_labels),
+        Tier    = factor(Tier, levels = c("Excellent", "Good", "Fair", "Poor"))
+      )
+    
+    ggplot(heatmap_data, aes(x = Measure, y = Tier, fill = Score)) +
+      geom_tile(color = "white", linewidth = 1.5) +
+      geom_text(aes(label = paste0(round(Score, 1), "%")),
+                size = 5, fontface = "bold", color = "white") +
+      scale_fill_gradient(low = "#e74c3c", high = "#2ecc71",
+                          limits = c(0, 100), name = "% Positive") +
+      labs(
+        title = "Patient Experience by Performance Tier",
+        subtitle = "Average positive response rate per measure",
+        x = "", y = ""
+      ) +
+      theme_minimal(base_size = 13) +
+      theme(
+        legend.position  = "right",
+        axis.text.x      = element_text(face = "bold", size = 11),
+        axis.text.y      = element_text(face = "bold", size = 11),
+        panel.grid       = element_blank(),
+        plot.title       = element_text(face = "bold", size = 14),
+        plot.subtitle    = element_text(color = "#555", size = 11)
+      )
+  })
+  
   output$staff_table <- renderTable({
     req(input$measure)
+    active_cols <- pos_cols[
+      c("staff", "communication", "rating", "recommend") %in% input$measure
+    ]
     staff_filtered() %>%
-      select(`Facility Name`, State, all_of(selected_cols()))
+      select(`Facility Name`, State, all_of(active_cols)) %>%
+      rename_with(~ recode(., !!!measure_labels), all_of(active_cols))
   })
+  
   # RISK FACTORS — FIND MY HOSPITAL
   observeEvent(input$state_hai, {
     filtered <- if (input$state_hai == "All") {
