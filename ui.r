@@ -139,6 +139,21 @@ navbarPage("Hospital Ratings",
                       
                       # --- VETERAN INPATIENT PSYCHIATRIC FACILITIES ---
                       tabPanel("Veteran Inpatient Psychiatric Facilities",
+                               fluidRow(
+                                 column(12,
+                                        div(
+                                          style = "background:#e8f0fe; border:1px solid #8ab4f8; border-radius:8px;
+                      padding:12px 20px; margin-bottom:15px;",
+                                          tags$b("\u2139\ufe0f What is a VA Hospital?"),
+                                          tags$p(
+                                            "VA Hospitals are medical facilities operated by the United States Department of Veterans Affairs.
+               They provide comprehensive healthcare services to eligible veterans, including primary care,
+               specialty care, mental health services, and rehabilitation programs.",
+                                            style = "margin:6px 0 0 0; color:#555; font-size:13px;"
+                                          )
+                                        )
+                                 )
+                               ),
                                fluidRow(column(12, leafletOutput("vaMap", height = "600px"))),
                                hr(),
                                fluidRow(
