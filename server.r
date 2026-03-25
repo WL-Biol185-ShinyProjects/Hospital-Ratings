@@ -287,7 +287,7 @@ function(input, output, session) {
                   ),
                   label
                 ),
-                p("Avg SIR vs national baseline",
+                p("Compared to the national average",
                   style = "font-size:11px; color:#aaa; margin-top:8px;")
               )
        )
