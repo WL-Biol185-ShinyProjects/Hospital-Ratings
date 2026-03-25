@@ -235,6 +235,68 @@ function(input, output, session) {
                           border-radius:4px; padding:6px 12px; margin-left:8px;")
      )
    })
+   observeEvent(input$go_compare, {
+     updateTabsetPanel(session, "risk_tabs", selected = "Compare Hospitals")
+   })
+   output$gauge_grid <- renderUI({
+     infection_types <- input$infection_type_compare
+     req(length(infection_types) > 0)
+     
+     state_data <- if (input$state_hai_compare == "All") {
+       hai_cleaned
+     } else {
+       hai_cleaned %>% filter(State == input$state_hai_compare)
+     }
+     
+     gauge_boxes <- lapply(infection_types, function(inf) {
+       inf_data <- state_data %>% filter(Infection.Type == inf)
+       avg_sir   <- round(mean(inf_data$Score, na.rm = TRUE), 2)
+       
+       label <- case_when(
+         avg_sir < 0.5 ~ "Excellent",
+         avg_sir < 1.0 ~ "Good",
+         avg_sir < 1.5 ~ "Fair",
+         TRUE          ~ "Poor"
+       )
+       color <- case_when(
+         avg_sir < 0.5 ~ "#2ecc71",
+         avg_sir < 1.0 ~ "#f39c12",
+         avg_sir < 1.5 ~ "#e67e22",
+         TRUE          ~ "#e74c3c"
+       )
+       
+       column(4,
+              div(
+                style = paste0(
+                  "background:#fff; border:1px solid #ddd; border-radius:10px;",
+                  "padding:20px; margin:10px 0; text-align:center;",
+                  "border-top: 5px solid ", color, ";"
+                ),
+                h5(inf, style = "font-size:13px; color:#555; margin-bottom:10px;"),
+                div(
+                  style = paste0(
+                    "font-size:36px; font-weight:bold; color:", color, ";"
+                  ),
+                  avg_sir
+                ),
+                div(
+                  style = paste0(
+                    "display:inline-block; background:", color,
+                    "; color:white; border-radius:12px;",
+                    "padding:3px 12px; font-size:12px; margin-top:6px;"
+                  ),
+                  label
+                ),
+                p("Avg SIR vs national baseline",
+                  style = "font-size:11px; color:#aaa; margin-top:8px;")
+              )
+       )
+     })
+     
+     # Wrap every 3 gauges into a fluidRow
+     rows <- split(gauge_boxes, ceiling(seq_along(gauge_boxes) / 3))
+     do.call(tagList, lapply(rows, function(r) fluidRow(r)))
+   })
    
    # ---------------- Specialty Care: Birthing Hospitals ----------------
    output$birthing_summary_bar <- renderUI({
