@@ -12,7 +12,26 @@ birthing <- read.csv("Birthing_Friendly_Hospitals_Geocoded.csv")
 VA_IPF_geocoded <- read.csv("VA_IPF_geocoded.csv")
 hai_cleaned <- read.csv("hai_cleaned.csv")
 SurgCenters <- read.csv("SurgCenters.csv")
+readmission <- read.csv("FY_2025_Hospital_Readmissions_Reduction_Program_Hospital.csv", check.names = FALSE)  
 
+readmission_clean <- readmission %>%
+  select(-`Facility ID`, -`Footnote`, -`Measure Name`, 
+         -`Excess Readmission Ratio`, -`Expected Readmission Rate`,
+         -`Start Date`, -`End Date`) %>%
+  mutate(
+    `Number of Readmissions` = as.numeric(`Number of Readmissions`),
+    `Number of Discharges`   = as.numeric(`Number of Discharges`),
+    `Predicted Readmission Rate` = as.numeric(`Predicted Readmission Rate`)
+  )
+
+df_combined <- readmission_clean %>%
+  group_by(`Facility Name`, State) %>%
+  summarise(
+    `Total Readmissions` = sum(`Number of Readmissions`, na.rm = TRUE),
+    `Total Discharges`   = sum(`Number of Discharges`, na.rm = TRUE),
+    `Avg Predicted Readmission Rate` = mean(`Predicted Readmission Rate`, na.rm = TRUE)
+  ) %>%
+  ungroup()
 
 function(input, output, session) {
   
@@ -131,25 +150,52 @@ function(input, output, session) {
                       choices = c("Select a hospital..." = "",
                                   sort(unique(filtered$Facility.Name))))
   })
- 
-   care_type_infections <- reactive({
-    switch(input$care_type,
-           "General"   = c("MRSA Blood Infection",
-                           "C. Difficile Infection",
-                           "Central Line Infection",
-                           "Urinary Tract Infection"),
-           "Surgery"   = c("Surgical Site - Colon",
-                           "Surgical Site - Hysterectomy",
-                           "Central Line Infection",
-                           "MRSA Blood Infection"),
-           "Maternity" = c("Surgical Site - Hysterectomy",
-                           "Urinary Tract Infection",
-                           "C. Difficile Infection"),
-           "Emergency" = c("MRSA Blood Infection",
-                           "C. Difficile Infection",
-                           "Central Line Infection",
-                           "Urinary Tract Infection")
-    )
+  care_type_infections <- reactive({ 
+    switch(input$care_type, "General" = c
+           ("MRSA Blood Infection", "C. Difficile Infection", 
+             "Central Line Infection", 
+             "Urinary Tract Infection"), 
+           "Surgery" = c("Surgical Site - Colon", "Surgical Site - Hysterectomy", "Central Line Infection", "MRSA Blood Infection"), 
+           "Maternity" = c("Surgical Site - Hysterectomy", "Urinary Tract Infection", "C. Difficile Infection"), 
+           "Emergency" = c("MRSA Blood Infection", "C. Difficile Infection", "Central Line Infection", "Urinary Tract Infection") ) })
+  
+  # --- RISK FACTORS — Readmission Risks ---
+  # Reactive filtered data based on search and state
+  readmit_filtered <- reactive({
+    req(df_combined)  # ensure df_combined exists
+    data <- df_combined
+    
+    # Filter by search text
+    if (!is.null(input$search_readmission) && input$search_readmission != "") {
+      data <- data %>% filter(grepl(input$search_readmission, `Facility Name`, ignore.case = TRUE))
+    }
+    
+    # Filter by state
+    if (!is.null(input$state_readmission) && input$state_readmission != "All") {
+      data <- data %>% filter(State == input$state_readmission)
+    }
+    
+    data
+  })
+  
+  # Bar chart: Top 10 facilities by total readmissions
+  output$readmission_barchart <- renderPlot({
+    req(readmit_filtered())
+    
+    readmit_filtered() %>%
+      slice_max(`Total Readmissions`, n = 10) %>%
+      ggplot(aes(x = reorder(`Facility Name`, `Total Readmissions`), y = `Total Readmissions`)) +
+      geom_bar(stat = "identity", fill = "#2c7fb8") +
+      coord_flip() +
+      labs(title = "Top 10 Facilities by Total Readmissions",
+           x = "", y = "Total Readmissions") +
+      theme_minimal(base_size = 13)
+  })
+  
+  # Full table of filtered readmission data
+  output$readmission_table <- renderTable({
+    req(readmit_filtered())
+    readmit_filtered()
   })
   #  Render the hospital card
    output$hospital_card <- renderUI({

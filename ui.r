@@ -10,7 +10,25 @@ VA_IPF_geocoded <- read.csv("VA_IPF_geocoded.csv")
 hai_cleaned <- read.csv("hai_cleaned.csv")
 birthing <- read.csv("Birthing_Friendly_Hospitals_Geocoded.csv")
 SurgCenters <- read.csv("SurgCenters.csv")
-hvbp <- read.csv("hvbp_person_and_community_engagement.csv", check.names = FALSE)
+readmission <- read.csv("FY_2025_Hospital_Readmissions_Reduction_Program_Hospital.csv", check.names = FALSE)
+readmission_clean <- readmission %>%
+  select(-`Facility ID`, -`Footnote`, -`Measure Name`, 
+         -`Excess Readmission Ratio`, -`Expected Readmission Rate`,
+         -`Start Date`, -`End Date`) %>%
+  mutate(
+    `Number of Readmissions` = as.numeric(`Number of Readmissions`),
+    `Number of Discharges`   = as.numeric(`Number of Discharges`),
+    `Predicted Readmission Rate` = as.numeric(`Predicted Readmission Rate`)
+  )
+
+df_combined <- readmission_clean %>%
+  group_by(`Facility Name`, State) %>%
+  summarise(
+    `Total Readmissions` = sum(`Number of Readmissions`, na.rm = TRUE),
+    `Total Discharges`   = sum(`Number of Discharges`, na.rm = TRUE),
+    `Avg Predicted Readmission Rate` = mean(`Predicted Readmission Rate`, na.rm = TRUE)
+  ) %>%
+  ungroup() 
 
 
 navbarPage("Hospital Ratings",
@@ -236,7 +254,26 @@ navbarPage("Hospital Ratings",
                                # Dynamic gauges grid
                                uiOutput("gauge_grid")
                       
-                      ) # end Compare Hospitals
+                      ), # end Compare Hospitals
+                      
+      # ---- New Readmission Risks tab ----
+      tabPanel("Readmission Risks",
+               br(),
+               fluidRow(
+                 column(4, textInput("search_readmission", "Search Facility:", placeholder = "Type facility name...")),
+                 column(4, selectInput("state_readmission", "Filter by State:", 
+                                       choices = c("All", sort(unique(df_combined$State))),
+                                       selected = "All"))
+               ),
+               hr(),
+               fluidRow(                              
+                 column(12, plotOutput("readmission_barchart", height = "300px"))
+                               ),
+                               hr(),
+                               fluidRow(
+                                 column(12, tableOutput("readmission_table"))
+                               )
+                      ) # end Readmission Risks
                       
                     ) # end tabsetPanel
            ), # end Risk Factors
