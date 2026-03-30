@@ -13,6 +13,29 @@ VA_IPF_geocoded <- read.csv("VA_IPF_geocoded.csv")
 hai_cleaned <- read.csv("hai_cleaned.csv")
 SurgCenters <- read.csv("SurgCenters.csv")
 readmission <- read.csv("FY_2025_Hospital_Readmissions_Reduction_Program_Hospital.csv", check.names = FALSE)  
+hvbp_raw <- read.csv("hvbp_person_and_community_engagement.csv", check.names = FALSE)
+
+hvbp_clean <- hvbp_raw %>%
+  select(
+    `Facility Name`, State,
+    nurse_comm  = `Communication With Nurses Performance Rate`,
+    doctor_comm = `Communication With Doctors Performance Rate`,
+    staff_resp  = `Responsiveness Of Hospital Staff Performance Rate`,
+    care_trans  = `Care Transition Performance Rate`,
+    med_comm    = `Communication About Medicines Performance Rate`,
+    cleanliness = `Cleanliness And Quietness Of Hospital Environment Performance Rate`,
+    discharge   = `Discharge Information Performance Rate`,
+    overall     = `Overall Rating Of Hospital Performance Rate`,
+    base_score  = `Hcahps Base Score`,
+    consistency = `Hcahps Consistency Score`
+  ) %>%
+  mutate(
+    across(c(nurse_comm, doctor_comm, staff_resp, care_trans,
+             med_comm, cleanliness, discharge, overall),
+           ~ as.numeric(gsub("%", "", .))),
+    base_score  = as.numeric(base_score),
+    consistency = as.numeric(consistency)
+  )
 
 readmission_clean <- readmission %>%
   select(-`Facility ID`, -`Footnote`, -`Measure Name`, 
@@ -29,16 +52,35 @@ df_combined <- readmission_clean %>%
   summarise(
     `Total Readmissions` = sum(`Number of Readmissions`, na.rm = TRUE),
     `Total Discharges`   = sum(`Number of Discharges`, na.rm = TRUE),
-    `Avg Predicted Readmission Rate` = mean(`Predicted Readmission Rate`, na.rm = TRUE)
+    `Avg Predicted Readmission Rate` = mean(`Predicted Readmission Rate`, na.rm = TRUE),
+    .groups = "drop"
   ) %>%
   ungroup()
 
 function(input, output, session) {
   
+  # Populate HVBP state dropdown on startup
+  observe({
+    updateSelectInput(session, "state_hvbp",
+                      choices = c("All", sort(unique(hvbp_clean$State))),
+                      selected = "All")
+  })
+  observeEvent(input$state_hvbp, {
+    filtered <- if (input$state_hvbp == "All") {
+      hvbp_clean
+    } else {
+      hvbp_clean %>% filter(State == input$state_hvbp)
+    }
+    updateSelectInput(session, "facility_hvbp",
+                      choices = c("Select a hospital..." = "",
+                                  sort(unique(filtered$`Facility Name`))),
+                      selected = "")
+  })
+  
   output$plot <- renderPlot({
     plot(cars, type=input$plotType)
   })
-  
+ 
   output$summary <- renderPrint({
     summary(cars)
   })
