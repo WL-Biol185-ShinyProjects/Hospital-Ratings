@@ -11,7 +11,7 @@ staff_rating <- read.csv("staff_rating.csv", row.names = 1, check.names = FALSE)
 birthing <- read.csv("Birthing_Friendly_Hospitals_Geocoded.csv")
 VA_IPF_geocoded <- read.csv("VA_IPF_geocoded.csv")
 hai_cleaned <- read.csv("hai_cleaned.csv")
-SurgCenters <- read.csv("SurgCenters.csv")
+SurgCenters <- read.csv("SurgCenters.csv", check.names = FALSE)
 readmission <- read.csv("FY_2025_Hospital_Readmissions_Reduction_Program_Hospital.csv", check.names = FALSE)  
 hvbp_raw <- read.csv("hvbp_person_and_community_engagement.csv", check.names = FALSE)
 
