@@ -198,18 +198,16 @@ navbarPage("Hospital Ratings",
                                br(),
                                fluidRow(
                                  column(4, selectInput("state_hai", "What state are you in?",
-                                                       choices = c("All", sort(unique(hai_cleaned$State))),
-                                                       selected = "All")),
-                                 column(4, selectInput("facility_hai", "Select a Hospital:",
-                                                       choices = c("Select a hospital..." = ""),
-                                                       selected = "",
-                                                       selectize= TRUE)),
+                                                       choices = c("Select a state..." = "", sort(unique(hai_cleaned$State))),
+                                                       selected = "")),
+                                 column(4, uiOutput("facility_dropdown")),
                                  column(4, selectInput("care_type", "What type of care are you seeking?",
                                                        choices = c("General", "Surgery", "Maternity", "Emergency")))
                                ),
                                hr(),
                                uiOutput("hospital_card"),
                                uiOutput("compare_nudge")
+                      )
                       ), # end Find My Hospital
                       
                       tabPanel("Compare Hospitals",

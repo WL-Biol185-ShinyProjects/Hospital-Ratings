@@ -260,15 +260,17 @@ function(input, output, session) {
   })
   
   # RISK FACTORS — FIND MY HOSPITAL
-  observeEvent(input$state_hai, {
-    filtered <- if (input$state_hai == "All") {
-      hai_cleaned
-    } else {
-      hai_cleaned %>% filter(State == input$state_hai)
-    }
-    updateSelectInput(session, "facility_hai",
-                      choices = c("Select a hospital..." = "",
-                                  sort(unique(filtered$Facility.Name))))
+  output$facility_dropdown <- renderUI({
+    req(input$state_hai)
+    
+    hospitals <- hai_cleaned %>%
+      filter(State == input$state_hai) %>%
+      pull(Facility.Name) %>%
+      sort()
+    
+    selectInput("facility_hai", "Select a Hospital:",
+                choices = c("Select a hospital..." = "", hospitals),
+                selected = "")
   })
   care_type_infections <- reactive({ 
     switch(input$care_type, "General" = c
