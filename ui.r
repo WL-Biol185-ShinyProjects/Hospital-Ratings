@@ -207,7 +207,7 @@ navbarPage("Hospital Ratings",
                                hr(),
                                uiOutput("hospital_card"),
                                uiOutput("compare_nudge")
-                      )
+                      ),
                       ), # end Find My Hospital
                       
                       tabPanel("Compare Hospitals",
@@ -264,11 +264,11 @@ navbarPage("Hospital Ratings",
                                )
                       ) # end Readmission Risks
                       
-                    ) # end tabsetPanel
-           ), # end Risk Factors
-
+                    ), # end tabsetPanel
+       
 navbarMenu("More",
            tabPanel("Table", DT::dataTableOutput("table")),
            tabPanel("About")
   )
- )# end navbarPage
+ ) # end navbarPage
+

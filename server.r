@@ -272,6 +272,7 @@ function(input, output, session) {
                 choices = c("Select a hospital..." = "", hospitals),
                 selected = "")
   })
+  
   care_type_infections <- reactive({ 
     switch(input$care_type, "General" = c
            ("MRSA Blood Infection", "C. Difficile Infection", 
@@ -321,11 +322,11 @@ function(input, output, session) {
   })
   #  Render the hospital card
    output$hospital_card <- renderUI({
-     if (is.null(input$facility_hai) || input$facility_hai == "" || input$facility_hai == "Select a hospital...") {
+     req(input$state_hai)
+     if (!isTruthy(input$facility_hai) || input$facility_hai == "Select a hospital...") {
        div(
          style = "margin-top:10px;",
-         h4(if (input$state_hai == "All") "All Hospitals — Select a hospital above for details"
-            else paste("Hospitals in", input$state_hai, "— Select one above for details"),
+         h4(paste("Hospitals in", input$state_hai, "— Select one above for details"),
             style = "color:#333;"),
          p("Sorted by best infection safety first.", style = "color:#777; font-size:13px;"),
          DT::dataTableOutput("summary_dt")
