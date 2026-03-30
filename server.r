@@ -260,27 +260,41 @@ function(input, output, session) {
   })
   
   # RISK FACTORS — FIND MY HOSPITAL
-  output$facility_dropdown <- renderUI({
-    req(input$state_hai)
+  output$facility_readmission_dropdown <- renderUI({
+    if (input$state_readmission == "All") {
+      facilities <- sort(unique(df_combined$`Facility Name`))
+    } else {
+      facilities <- df_combined %>%
+        filter(State == input$state_readmission) %>%
+        pull(`Facility Name`) %>%
+        sort()
+    }
     
-    hospitals <- hai_cleaned %>%
-      filter(State == input$state_hai) %>%
-      pull(Facility.Name) %>%
-      sort()
-    
-    selectInput("facility_hai", "Select a Hospital:",
-                choices = c("Select a hospital..." = "", hospitals),
-                selected = "")
+    selectInput("facility_readmission", "Select a Facility:",
+                choices = c("All" = "All", facilities),
+                selected = "All")
   })
   
-  care_type_infections <- reactive({ 
-    switch(input$care_type, "General" = c
-           ("MRSA Blood Infection", "C. Difficile Infection", 
-             "Central Line Infection", 
-             "Urinary Tract Infection"), 
-           "Surgery" = c("Surgical Site - Colon", "Surgical Site - Hysterectomy", "Central Line Infection", "MRSA Blood Infection"), 
-           "Maternity" = c("Surgical Site - Hysterectomy", "Urinary Tract Infection", "C. Difficile Infection"), 
-           "Emergency" = c("MRSA Blood Infection", "C. Difficile Infection", "Central Line Infection", "Urinary Tract Infection") ) })
+  # Table reacts to both dropdowns
+  output$readmission_table <- DT::renderDataTable({
+    req(input$state_readmission)
+    
+    df <- df_combined
+    
+    if (input$state_readmission != "All") {
+      df <- df %>% filter(State == input$state_readmission)
+    }
+    
+    if (isTruthy(input$facility_readmission) && input$facility_readmission != "All") {
+      df <- df %>% filter(`Facility Name` == input$facility_readmission)
+    }
+    
+    df %>%
+      select(`Facility Name`, State, `Total Discharges`,
+             `Total Readmissions`, `Avg Predicted Readmission Rate`) %>%
+      arrange(`Avg Predicted Readmission Rate`) %>%
+      DT::datatable(options = list(pageLength = 15), rownames = FALSE)
+  })
   
   # --- RISK FACTORS — Readmission Risks ---
   # Reactive filtered data based on search and state
@@ -302,23 +316,24 @@ function(input, output, session) {
   })
   
   # Bar chart: Top 10 facilities by total readmissions
-  output$readmission_barchart <- renderPlot({
-    req(readmit_filtered())
+  output$readmission_chart <- DT::renderDataTable({
+    df <- df_combined
+    if (input$state_readmission != "All") {
+      df <- df %>% filter(State == input$state_readmission)
+    }
     
-    readmit_filtered() %>%
-      slice_max(`Total Readmissions`, n = 10) %>%
-      ggplot(aes(x = reorder(`Facility Name`, `Total Readmissions`), y = `Total Readmissions`)) +
-      geom_bar(stat = "identity", fill = "#2c7fb8") +
-      coord_flip() +
-      labs(title = "Top 10 Facilities by Total Readmissions",
-           x = "", y = "Total Readmissions") +
-      theme_minimal(base_size = 13)
-  })
-  
-  # Full table of filtered readmission data
-  output$readmission_table <- renderTable({
-    req(readmit_filtered())
-    readmit_filtered()
+    if (nchar(input$search_readmission) > 0) {
+      df <- df %>% filter(grepl(input$search_readmission, `Facility Name`, ignore.case = TRUE))
+    }
+    
+    df %>%
+      select(`Facility Name`, State, `Total Discharges`, 
+             `Total Readmissions`, `Avg Predicted Readmission Rate`) %>%
+      arrange(`Avg Predicted Readmission Rate`) %>%
+      DT::datatable(
+        options = list(pageLength = 15, searchable = TRUE),
+        rownames = FALSE
+      )
   })
   #  Render the hospital card
    output$hospital_card <- renderUI({
@@ -332,8 +347,7 @@ function(input, output, session) {
          DT::dataTableOutput("summary_dt")
        )
      } else {
-       hosp_data <- filter(hai_cleaned, Facility.Name == input$facility_hai,
-                           Infection.Type %in% care_type_infections())
+       hosp_data <- filter(hai_cleaned, Facility.Name == input$facility_hai)
        req(nrow(hosp_data) > 0)
        
        hosp_data <- hosp_data %>%

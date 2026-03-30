@@ -197,18 +197,17 @@ navbarPage("Hospital Ratings",
                       tabPanel("Find My Hospital",
                                br(),
                                fluidRow(
-                                 column(4, selectInput("state_hai", "What state are you in?",
+                                 column(6, selectInput("state_hai", "What state are you in?",
                                                        choices = c("Select a state..." = "", sort(unique(hai_cleaned$State))),
                                                        selected = "")),
-                                 column(4, uiOutput("facility_dropdown")),
-                                 column(4, selectInput("care_type", "What type of care are you seeking?",
-                                                       choices = c("General", "Surgery", "Maternity", "Emergency")))
+                                 column(6, uiOutput("facility_dropdown")),
+
                                ),
                                hr(),
                                uiOutput("hospital_card"),
                                uiOutput("compare_nudge")
-                      ),
-                      ), # end Find My Hospital
+                      ),# end Find My Hospital
+
                       
                       tabPanel("Compare Hospitals",
                                br(),
@@ -249,22 +248,17 @@ navbarPage("Hospital Ratings",
       tabPanel("Readmission Risks",
                br(),
                fluidRow(
-                 column(4, textInput("search_readmission", "Search Facility:", placeholder = "Type facility name...")),
-                 column(4, selectInput("state_readmission", "Filter by State:", 
+                 column(6, selectInput("state_readmission", "Filter by State:", 
                                        choices = c("All", sort(unique(df_combined$State))),
-                                       selected = "All"))
+                                       selected = "All")),
+                 column(6, uiOutput("facility_readmission_dropdown"))
                ),
                hr(),
-               fluidRow(                              
-                 column(12, plotOutput("readmission_barchart", height = "300px"))
-                               ),
-                               hr(),
-                               fluidRow(
-                                 column(12, tableOutput("readmission_table"))
-                               )
-                      ) # end Readmission Risks
-                      
+               DT::dataTableOutput("readmission_table")
+      )
+                     
                     ), # end tabsetPanel
+                    ),
        
 navbarMenu("More",
            tabPanel("Table", DT::dataTableOutput("table")),
