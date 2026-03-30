@@ -107,18 +107,22 @@ write.csv(combined, "combined.csv", row.names = FALSE)
 
 # FOR DIRECTORY DATA: need to rerun
 install.packages("tidygeocoder")
+library(dplyr)
 library(tidygeocoder)
-> 
-  > # Geocode only the missing rows
-  > missing_coords <- directory %>% 
-  +     filter(is.na(latitude) | is.na(longitude)) %>%
-  +     geocode(address = full_address, method = "osm", lat = lat_new, long = lon_new)
+
+missing_coords2 <- directory %>%
+  filter(is.na(latitude) | is.na(longitude)) %>%
+  geocode(address = full_address, method = "census", lat = lat_new, long = lon_new)
 # Join back into the main table
 directory <- directory %>%
-  left_join(missing_coords %>% select(Facility.Name, lat_new, lon_new), 
+  left_join(missing_coords2 %>% select(Facility.Name, lat_new, lon_new), 
             by = "Facility.Name") %>%
   mutate(
     latitude  = ifelse(is.na(latitude), lat_new, latitude),
     longitude = ifelse(is.na(longitude), lon_new, longitude)
   ) %>%
   select(-lat_new, -lon_new)
+#verify and save
+sum(is.na(directory$latitude))
+
+write.csv(directory, "directory.csv", row.names = FALSE)
