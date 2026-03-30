@@ -76,6 +76,83 @@ function(input, output, session) {
                                   sort(unique(filtered$`Facility Name`))),
                       selected = "")
   })
+  hvbp_labels <- c(
+    nurse_comm  = "Nurse Communication",
+    doctor_comm = "Doctor Communication",
+    staff_resp  = "Staff Responsiveness",
+    care_trans  = "Care Transition",
+    med_comm    = "Medicine Communication",
+    cleanliness = "Cleanliness & Quiet",
+    discharge   = "Discharge Info",
+    overall     = "Overall Rating"
+  )
+  
+
+  
+  output$hvbp_hospital_card <- renderUI({
+    req(input$facility_hvbp != "" && input$facility_hvbp != "Select a hospital...")
+    
+    hosp <- hvbp_clean %>% filter(`Facility Name` == input$facility_hvbp)
+    req(nrow(hosp) > 0)
+    
+    scores <- hosp %>%
+      select(all_of(names(hvbp_labels))) %>%
+      pivot_longer(everything(), names_to = "measure", values_to = "score") %>%
+      mutate(
+        label = recode(measure, !!!hvbp_labels),
+        color = case_when(
+          score >= 80 ~ "#2ecc71",
+          score >= 65 ~ "#f39c12",
+          score >= 50 ~ "#e67e22",
+          TRUE        ~ "#e74c3c"
+        ),
+        grade = case_when(
+          score >= 80 ~ "Excellent",
+          score >= 65 ~ "Good",
+          score >= 50 ~ "Fair",
+          TRUE        ~ "Poor"
+        )
+      )
+    
+    overall_avg <- mean(scores$score, na.rm = TRUE)
+    overall_color <- case_when(
+      overall_avg >= 80 ~ "#2ecc71",
+      overall_avg >= 65 ~ "#f39c12",
+      overall_avg >= 50 ~ "#e67e22",
+      TRUE              ~ "#e74c3c"
+    )
+    
+    div(
+      style = "background:#fff; border:1px solid #ddd; border-radius:10px; padding:20px; margin-top:10px;",
+      h3(input$facility_hvbp, style = "margin-top:0;"),
+      div(style = paste0("display:inline-block; background:", overall_color,
+                         "; color:white; border-radius:6px; padding:6px 14px;",
+                         "font-size:14px; margin-bottom:15px;"),
+          strong(paste0("Overall Avg: ", round(overall_avg, 1), "%"))
+      ),
+      hr(),
+      fluidRow(
+        lapply(1:nrow(scores), function(i) {
+          column(3,
+                 div(style = paste0("background:#f9f9f9; border-radius:8px; padding:12px;",
+                                    "margin:6px 0; border-top: 4px solid ", scores$color[i], ";",
+                                    "text-align:center;"),
+                     p(scores$label[i],
+                       style = "font-size:12px; color:#555; margin:0 0 6px 0; font-weight:bold;"),
+                     div(style = paste0("font-size:26px; font-weight:bold; color:", scores$color[i], ";"),
+                         paste0(round(scores$score[i], 1), "%")),
+                     div(style = paste0("font-size:11px; color:", scores$color[i], ";"),
+                         scores$grade[i])
+                 )
+          )
+        })
+      ),
+      hr(),
+      p(paste0("HCAHPS Base Score: ", hosp$base_score,
+               " | Consistency Score: ", hosp$consistency),
+        style = "font-size:12px; color:#888; margin:0;")
+    )
+  })
   
   output$plot <- renderPlot({
     plot(cars, type=input$plotType)
@@ -147,7 +224,8 @@ function(input, output, session) {
       mutate(
         Measure = recode(Measure, !!!measure_labels),
         Tier    = factor(Tier, levels = c("Excellent", "Good", "Fair", "Poor"))
-      )
+      ) %>%
+      filter(!is.na(Score))
     
     ggplot(heatmap_data, aes(x = Measure, y = Tier, fill = Score)) +
       geom_tile(color = "white", linewidth = 1.5) +

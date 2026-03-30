@@ -81,25 +81,13 @@ navbarPage("Hospital Ratings",
                                  column(3, selectInput("facility_hvbp", "Look Up a Hospital:",
                                                        choices = c("Select a hospital..." = ""),
                                                        selected = ""))
-                               ),
-                               hr(),
-                               fluidRow(
-                                 column(12,
-                                        div(style = "background:#f8f9fa; border-radius:8px; padding:12px 20px; margin-bottom:15px;",
-                                            h5("How to read this chart:", style = "margin:0 0 4px 0;"),
-                                            p("Each cell shows the average patient-reported performance rate for hospitals in that tier.
-                Tiers are based on each hospital's overall HCAHPS base score.
-                Green = stronger performance, Red = weaker performance.",
-                                              style = "margin:0; font-size:13px; color:#555;")
-                                        )
-                                 )
-                               ),
-                               fluidRow(column(12, plotOutput("hvbp_heatmap", height = "350px"))),
-                               hr(),
-                               uiOutput("hvbp_hospital_card")
+                               )
                       )
-                    )
-           ),
+                      ),
+                      hr(),
+                      uiOutput("hvbp_hospital_card")
+                    ),
+
            
            navbarMenu("Specialty Care",
                       
@@ -197,7 +185,9 @@ navbarPage("Hospital Ratings",
                                fluidRow(column(12, uiOutput("surg_cards")))
                       ) # end Surgery Centers
                       
-           ), # end Specialty Care
+           ),
+     
+           # end Specialty Care
            
            # --- RISK FACTORS ---
            tabPanel("Risk Factors",
@@ -283,4 +273,4 @@ navbarMenu("More",
            tabPanel("Table", DT::dataTableOutput("table")),
            tabPanel("About")
   )
-) # end navbarPage
+ )# end navbarPage
