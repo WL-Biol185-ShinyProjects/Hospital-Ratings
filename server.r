@@ -628,14 +628,14 @@ function(input, output, session) {
           vertical-align:top; box-shadow:2px 2px 5px rgba(0,0,0,0.08);",
          
          h4(style = "color:#1a3a5c; margin-top:0; font-size:15px;",
-            "🏥 ", data[["Facility Name"]][i]),  # ✅ exact column name
+            "🏥 ", data$"Facility Name"[i]),  
          
          p(style = "color:#555; font-size:13px; margin:4px 0;",
            "📍 ", data$full_address[i]),
          
          if (isTRUE(!is.na(data[["Telephone Number"]][i]) && data[["Telephone Number"]][i] != "")) {
            p(style = "color:#555; font-size:13px; margin:4px 0;",
-             "📞 ", data[["Telephone Number"]][i])  # ✅ exact column name
+             "📞 ", data$"Telephone Number"[i])  
          },
          
          tags$a(
