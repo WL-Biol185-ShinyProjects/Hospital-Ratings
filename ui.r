@@ -9,7 +9,7 @@ staff_rating <- read.csv("staff_rating.csv")
 VA_IPF_geocoded <- read.csv("VA_IPF_geocoded.csv")
 hai_cleaned <- read.csv("hai_cleaned.csv")
 birthing <- read.csv("Birthing_Friendly_Hospitals_Geocoded.csv")
-SurgCenters <- read.csv("SurgCenters.csv")
+SurgCenters <- read.csv("SurgCenters.csv",check.names = FALSE)
 readmission <- read.csv("FY_2025_Hospital_Readmissions_Reduction_Program_Hospital.csv", check.names = FALSE)
 readmission_clean <- readmission %>%
   select(-`Facility ID`, -`Footnote`, -`Measure Name`, 
