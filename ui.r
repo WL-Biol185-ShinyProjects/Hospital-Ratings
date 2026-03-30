@@ -175,15 +175,35 @@ navbarPage("Hospital Ratings",
                       
                       # --- SURGERY CENTERS ---
                       tabPanel("Surgery Centers",
+                               fluidRow(
+                                 column(12,
+                                        div(
+                                          style = "background:#e8f0fe; border:1px solid #8ab4f8; border-radius:8px;
+                                                  padding:12px 20px; margin-bottom:15px;",
+                                          tags$b("ℹ️ What is a Surgery Center?"),
+                                          tags$p(
+                                            "Surgery centers are outpatient facilities where patients receive surgical care 
+                                             and are discharged the same day. They specialize in a wide range of procedures 
+                                             including orthopedic, ophthalmologic, gastroenterological, and other surgeries.",
+                                            style = "margin:6px 0 0 0; color:#555; font-size:13px;"
+                                          )
+                                        )
+                                 )
+                               ),
                                fluidRow(column(12, leafletOutput("SurgMap", height = "600px"))),
                                hr(),
+                               # ⬇️ CHANGED - filter and cards now together inside one column(12), with h3 header added
                                fluidRow(
-                                 column(3, selectInput("state_surg", "Filter by State:",
-                                                       choices = c("All", sort(unique(SurgCenters$State))),
-                                                       selected = "All"))
-                               ),
-                               fluidRow(column(12, uiOutput("surg_cards")))
-                      ) # end Surgery Centers
+                                 column(12,
+                                        h3("Surgery Centers by State"),        # ⬅️ ADDED
+                                        selectInput("state_surg", "Filter by State:",
+                                                    choices = c("All", sort(unique(SurgCenters$State))),
+                                                    selected = "All"),
+                                        uiOutput("surg_cards")                 # ⬅️ moved inside column(12)
+                                 )
+                               )
+                      )
+                               # end Surgery Centers
                       
            ),
      

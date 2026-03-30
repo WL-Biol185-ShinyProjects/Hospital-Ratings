@@ -596,20 +596,23 @@ function(input, output, session) {
     #---------------- Surgery Centers ----------------
    #map 
    output$SurgMap <- renderLeaflet({
-      leaflet(SurgCenters) %>%
-        addTiles() %>%
-        addAwesomeMarkers(
-          lng   = ~longitude,
-          lat   = ~latitude,
-          icon  = awesomeIcons(
-            icon = "hospital"
-          ),
-          popup = ~paste0(
-            "<b>", SurgCenters[["Facility Name"]], "</b><br>",
-            full_address
-          )
-        )
-    })
+     hospitalIcon <- makeIcon(
+       iconUrl = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='50' fill='%23c8d8e8'/%3E%3Ctext y='.85em' x='.1em' font-size='80'%3E%F0%9F%8F%A5%3C/text%3E%3C/svg%3E",
+       iconWidth = 45, iconHeight = 45
+     )
+     
+     leaflet(SurgCenters) %>%
+       # ⬅️ ADDED - setView to center and zoom the map on load
+       setView(lng = mean(SurgCenters$longitude, na.rm = TRUE),
+               lat = mean(SurgCenters$latitude, na.rm = TRUE), zoom = 4) %>%
+       addTiles() %>%
+       # ⬅️ CHANGED - addAwesomeMarkers replaced with addMarkers using custom icon
+       addMarkers(lng = ~longitude, lat = ~latitude, icon = hospitalIcon,
+                  popup = ~paste0("<b>", `Facility Name`, "</b><br>", full_address,
+                                  # ⬅️ ADDED - Get Directions link in popup
+                                  "<br><a href='https://www.google.com/maps/dir/?api=1&destination=",
+                                  latitude, ",", longitude, "' target='_blank'>Get Directions</a>"))
+   })
    #cards
    output$surg_cards <- renderUI({
      data <- SurgCenters
