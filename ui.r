@@ -5,6 +5,7 @@ library(shinyWidgets)
 library(DT)
 library(bslib)
 
+Directory <- read.csv("directory.csv")
 staff_rating <- read.csv("staff_rating.csv")
 VA_IPF_geocoded <- read.csv("VA_IPF_geocoded.csv")
 hai_cleaned <- read.csv("hai_cleaned.csv")
@@ -34,6 +35,7 @@ df_combined <- readmission_clean %>%
 navbarPage("Hospital Ratings",
            theme = bslib::bs_theme(bootswatch = "lumen"),
            
+           # DIRECTORY MAP---------------
            tabPanel("Directory Map",
                     sidebarLayout(
                       sidebarPanel(
@@ -45,6 +47,37 @@ navbarPage("Hospital Ratings",
                       )
                     )
            ),
+           
+           tabPanel("Hospital Directory",
+                    fluidRow(
+                      column(12,
+                             div(
+                               style = "background:#e8f0fe; border:1px solid #8ab4f8; border-radius:8px;
+                 padding:12px 20px; margin-bottom:15px;",
+                               tags$b("ℹ️ About This Directory"),
+                               tags$p(
+                                 "This directory provides a comprehensive list of hospitals and healthcare facilities 
+           across the United States. Use the map to explore facilities by location, or filter 
+           by state below to find facilities near you.",
+                                 style = "margin:6px 0 0 0; color:#555; font-size:13px;"
+                               )
+                             )
+                      )
+                    ),
+                    fluidRow(column(12, leafletOutput("directoryMap", height = "600px"))),
+                    hr(),
+                    fluidRow(
+                      column(12,
+                             h3("Hospitals by State"),
+                             selectInput("state_dir", "Filter by State:",
+                                         choices = c("All", sort(unique(directory$State))),
+                                         selected = "All"),
+                             uiOutput("directory_cards")
+                      )
+                    )
+           )
+           
+-----------#end directory page-------------------------
            
            tabPanel("Star Ratings",
                     verbatimTextOutput("summary")
