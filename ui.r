@@ -311,10 +311,12 @@ navbarPage("Hospital Ratings",
                  column(6, selectInput("state_readmission", "Filter by State:", 
                                        choices = c("All", sort(unique(df_combined$State))),
                                        selected = "All")),
-                 column(6, uiOutput("facility_readmission_dropdown"))
-               ),
-               hr(),
-               DT::dataTableOutput("readmission_table")
+                 column(6, uiOutput("readmission_kpi_cards"),
+                        hr(),
+                        uiOutput("readmission_scorecard"),
+                        hr(),
+                        h4("Full Data Table", style = "color:#555;"),
+                        DT::dataTableOutput("readmission_table")
       )
                      
                     ), # end tabsetPanel

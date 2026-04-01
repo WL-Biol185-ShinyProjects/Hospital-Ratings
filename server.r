@@ -369,192 +369,294 @@ function(input, output, session) {
     data
   })
   
-  # Bar chart: Top 10 facilities by total readmissions
-  output$readmission_chart <- DT::renderDataTable({
+  # SUmmary cards
+  output$readmission_kpi_cards <- renderUI({
     df <- df_combined
-    if (input$state_readmission != "All") {
+    if (input$state_readmission != "All")
       df <- df %>% filter(State == input$state_readmission)
-    }
     
-    if (nchar(input$search_readmission) > 0) {
-      df <- df %>% filter(grepl(input$search_readmission, `Facility Name`, ignore.case = TRUE))
-    }
-    
-    df %>%
-      select(`Facility Name`, State, `Total Discharges`, 
-             `Total Readmissions`, `Avg Predicted Readmission Rate`) %>%
-      arrange(`Avg Predicted Readmission Rate`) %>%
-      DT::datatable(
-        options = list(pageLength = 15, searchable = TRUE),
-        rownames = FALSE
+    avg_rate   <- round(mean(df$`Avg Predicted Readmission Rate`, na.rm = TRUE), 2)
+    total_read <- scales::comma(sum(df$`Total Readmissions`, na.rm = TRUE))
+    total_disc <- scales::comma(sum(df$`Total Discharges`, na.rm = TRUE))
+    n_hosp     <- nrow(df)
+    make_card <- function(icon, label, value, color) {
+      div(style = paste0(
+        "background:#fff; border-radius:10px; padding:18px 20px;",
+        "border-top:5px solid ", color, ";",
+        "box-shadow:1px 2px 6px rgba(0,0,0,0.08);",
+        "text-align:center; margin:6px;"),
+        div(style = "font-size:26px;", icon),
+        div(style = paste0("font-size:24px; font-weight:bold; color:", color, ";"), value),
+        div(style = "font-size:12px; color:#777; margin-top:4px;", label)
       )
+    } 
+    fluidRow(
+      column(3, make_card("🏥", "Hospitals", n_hosp, "#3498db")),
+      column(3, make_card("📤", "Total Discharges", total_disc, "#9b59b6")),
+      column(3, make_card("🔄", "Total Readmissions", total_read, "#e67e22")),
+      column(3, make_card("📊", "Avg Predicted Rate", paste0(avg_rate, "%"), "#e74c3c"))
+    )
   })
-  #  Render the hospital card
-   output$hospital_card <- renderUI({
-     req(input$state_hai)
-     if (!isTruthy(input$facility_hai) || input$facility_hai == "Select a hospital...") {
-       div(
-         style = "margin-top:10px;",
-         h4(paste("Hospitals in", input$state_hai, "— Select one above for details"),
-            style = "color:#333;"),
-         p("Sorted by best infection safety first.", style = "color:#777; font-size:13px;"),
-         DT::dataTableOutput("summary_dt")
-       )
-     } else {
-       hosp_data <- filter(hai_cleaned, Facility.Name == input$facility_hai)
-       req(nrow(hosp_data) > 0)
-       
-       hosp_data <- hosp_data %>%
-         mutate(dot_color = case_when(
-           Score < 1.0  ~ "#2ecc71",
-           Score == 1.0 ~ "#f39c12",
-           Score > 1.0  ~ "#e74c3c",
-           TRUE         ~ "#aaaaaa"
-         ),
-         performance_label = case_when(
-           Score < 1.0  ~ "Better than national average",
-           Score == 1.0 ~ "At national average",
-           Score > 1.0  ~ "Worse than national average",
-           TRUE         ~ "No data available"
-         ))
-       
-       avg_sir <- mean(hosp_data$Score, na.rm = TRUE)
-       better_count <- sum(hosp_data$Score < 1.0, na.rm = TRUE)
-       total_count <- nrow(hosp_data)
-       
-       overall_label <- case_when(
-         avg_sir < 0.5 ~ "Excellent",
-         avg_sir < 1.0 ~ "Good",
-         avg_sir < 1.5 ~ "Fair",
-         TRUE          ~ "Poor"
-       )
-       overall_color <- case_when(
-         avg_sir < 0.5 ~ "#2ecc71",
-         avg_sir < 1.0 ~ "#f39c12",
-         avg_sir < 1.5 ~ "#e67e22",
-         TRUE          ~ "#e74c3c"
-       )
-       
-       div(
-         style = "background:#fff; border:1px solid #ddd; border-radius:10px; padding:20px; margin-top:10px;",
-         h3(input$facility_hai, style = "margin-top:0;"),
-         p(paste0("Showing infection types relevant to: ", input$care_type),
-           style = "color:#555; font-size:13px; margin-bottom:10px;"),
-         div(style = paste0("background:", overall_color, "; color:white; padding:8px 14px;",
-                            "border-radius:6px; display:inline-block; font-size:15px;"),
-             strong(overall_label), " — Overall Infection Safety"),
-         hr(),
-         lapply(1:nrow(hosp_data), function(i) {
-           div(style = "display:flex; align-items:center; margin:10px 0;",
-               div(style = paste0("width:16px; height:16px; border-radius:50%; background:",
-                                  hosp_data$dot_color[i], "; margin-right:12px; flex-shrink:0;")),
-               div(strong(hosp_data$Infection.Type[i]),
-                   br(),
-                   span(hosp_data$performance_label[i], style = "color:#555; font-size:13px;"))
-           )
-         }),
-         hr(),
-         p(paste0("This hospital performs better than the national average in ",
-                  better_count, " out of ", total_count, " tracked infection categories."),
-           style = "font-size:15px; color:#333;")
-       )
-     }
-   })
-   
-   output$summary_dt <- DT::renderDataTable({
-     state_data <- if (input$state_hai == "All") hai_cleaned else filter(hai_cleaned, State == input$state_hai)
-     state_data %>%
-       group_by(Facility.Name, State) %>%
-       summarise(Avg_SIR = round(mean(Score, na.rm = TRUE), 2),
-                 Better  = sum(Score < 1.0, na.rm = TRUE),
-                 Total   = n(), .groups = "drop") %>%
-       mutate(Safety_Rating = case_when(
-         Avg_SIR < 0.5 ~ "Excellent",
-         Avg_SIR < 1.0 ~ "Good",
-         Avg_SIR < 1.5 ~ "Fair",
-         TRUE          ~ "Poor"
-       ),
-       Summary = paste0(Better, " of ", Total, " categories better than average")) %>%
-       arrange(Avg_SIR) %>%
-       select("Hospital" = Facility.Name,
-              "State" = State,
-              "Safety Rating" = Safety_Rating,
-              "Summary" = Summary)
-   }, options = list(pageLength = 10, scrollX = TRUE), rownames = FALSE)
-   
-   output$compare_nudge <- renderUI({
-     req(input$facility_hai != "")
-     div(
-       style = "margin-top:15px; padding:12px; background:#f0f4ff;
+  df <- df %>%
+    mutate(
+      Risk_Tier = case_when(
+        `Avg Predicted Readmission Rate` >= 20 ~ "High Risk",
+        `Avg Predicted Readmission Rate` >= 17 ~ "Moderate Risk",
+        `Avg Predicted Readmission Rate` >= 14 ~ "Low Risk",
+        TRUE                                   ~ "Very Low Risk"
+      ),
+      tier_color = case_when(
+        Risk_Tier == "High Risk"     ~ "#e74c3c",
+        Risk_Tier == "Moderate Risk" ~ "#e67e22",
+        Risk_Tier == "Low Risk"      ~ "#f1c40f",
+        TRUE                         ~ "#2ecc71"
+      ),
+      tier_icon = case_when(
+        Risk_Tier == "High Risk"     ~ "🔴",
+        Risk_Tier == "Moderate Risk" ~ "🟠",
+        Risk_Tier == "Low Risk"      ~ "🟡",
+        TRUE                         ~ "🟢"
+      )
+    ) %>%
+    arrange(desc(`Avg Predicted Readmission Rate`))
+  
+  if (nrow(df) == 0) return(p("No hospitals match your filters."))
+  
+  tiers <- c("High Risk", "Moderate Risk", "Low Risk", "Very Low Risk")
+  tier_sections <- lapply(tiers, function(tier) {
+    tier_df <- df %>% filter(Risk_Tier == tier)
+    if (nrow(tier_df) == 0) return(NULL)
+    
+    color <- tier_df$tier_color[1]
+    icon  <- tier_df$tier_icon[1]
+    
+    cards <- lapply(1:nrow(tier_df), function(i) {
+      rate  <- round(tier_df$`Avg Predicted Readmission Rate`[i], 1)
+      readm <- scales::comma(tier_df$`Total Readmissions`[i])
+      disc  <- scales::comma(tier_df$`Total Discharges`[i])
+      column(4,
+             div(style = paste0(
+               "background:#fff; border-radius:10px; padding:15px;",
+               "border-left:5px solid ", color, ";",
+               "box-shadow:1px 2px 5px rgba(0,0,0,0.07); margin:6px 0;"),
+               div(style = "font-size:13px; font-weight:bold; color:#333; margin-bottom:8px;",
+                   tier_df$`Facility Name`[i]),
+               div(style = "font-size:11px; color:#888; margin-bottom:10px;",
+                   tier_df$State[i]),
+               div(style = paste0("font-size:28px; font-weight:bold; color:", color, ";"),
+                   paste0(rate, "%")),
+               div(style = "font-size:11px; color:#aaa;", "Predicted Readmission Rate"),
+               hr(style = "margin:8px 0;"),
+               div(style = "display:flex; justify-content:space-between; font-size:12px; color:#555;",
+                   div(tags$b(readm), br(), "Readmissions"),
+                   div(style = "text-align:right;", tags$b(disc), br(), "Discharges")
+               )
+             )
+      )
+    })
+    tagList(
+      div(style = paste0(
+        "background:", color, "22; border-left:4px solid ", color, ";",
+        "padding:10px 16px; border-radius:6px; margin:20px 0 10px 0;",
+        "font-weight:bold; font-size:15px; color:", color, ";"),
+        paste0(icon, " ", tier, " — ", nrow(tier_df), " hospital(s)")
+      ),
+      fluidRow(cards)
+    )
+  })
+  
+  do.call(tagList, tier_sections)
+}
+# 3. Detailed table with color-coded risk tier
+output$readmission_table <- DT::renderDataTable({
+  df <- df_combined
+  
+  if (input$state_readmission != "All")
+    df <- df %>% filter(State == input$state_readmission)
+  if (isTruthy(input$facility_readmission) && input$facility_readmission != "All")
+    df <- df %>% filter(`Facility Name` == input$facility_readmission) 
+  df %>%
+    mutate(Risk_Tier = case_when(
+      `Avg Predicted Readmission Rate` >= 20 ~ "🔴 High Risk",
+      `Avg Predicted Readmission Rate` >= 17 ~ "🟠 Moderate Risk",
+      `Avg Predicted Readmission Rate` >= 14 ~ "🟡 Low Risk",
+      TRUE                                   ~ "🟢 Very Low Risk"
+    )) %>%
+    select(`Facility Name`, State, `Total Discharges`,
+           `Total Readmissions`, `Avg Predicted Readmission Rate`, Risk_Tier) %>%
+    arrange(`Avg Predicted Readmission Rate`) %>%
+    DT::datatable(options = list(pageLength = 15), rownames = FALSE) %>%
+    DT::formatStyle("Avg Predicted Readmission Rate",
+                    color = DT::styleInterval(c(14, 17, 20),
+                                              c("#2ecc71", "#f1c40f", "#e67e22", "#e74c3c")),
+                    fontWeight = "bold"
+    )
+})
+# Render the hospital card
+output$hospital_card <- renderUI({
+  req(input$state_hai)
+  if (!isTruthy(input$facility_hai) || input$facility_hai == "Select a hospital...") {
+    div(
+      style = "margin-top:10px;",
+      h4(paste("Hospitals in", input$state_hai, "— Select one above for details"),
+         style = "color:#333;"),
+      p("Sorted by best infection safety first.", style = "color:#777; font-size:13px;"),
+      DT::dataTableOutput("summary_dt")
+    )
+  } else {
+    hosp_data <- filter(hai_cleaned, Facility.Name == input$facility_hai)
+    req(nrow(hosp_data) > 0)
+    
+    hosp_data <- hosp_data %>%
+      mutate(
+        dot_color = case_when(
+          Score < 1.0  ~ "#2ecc71",
+          Score == 1.0 ~ "#f39c12",
+          Score > 1.0  ~ "#e74c3c",
+          TRUE         ~ "#aaaaaa"
+        ),
+        performance_label = case_when(
+          Score < 1.0  ~ "Better than national average",
+          Score == 1.0 ~ "At national average",
+          Score > 1.0  ~ "Worse than national average",
+          TRUE         ~ "No data available"
+        )
+      )
+    avg_sir      <- mean(hosp_data$Score, na.rm = TRUE)
+    better_count <- sum(hosp_data$Score < 1.0, na.rm = TRUE)
+    total_count  <- nrow(hosp_data)
+    
+    overall_label <- case_when(
+      avg_sir < 0.5 ~ "Excellent",
+      avg_sir < 1.0 ~ "Good",
+      avg_sir < 1.5 ~ "Fair",
+      TRUE          ~ "Poor"
+    )
+    overall_color <- case_when(
+      avg_sir < 0.5 ~ "#2ecc71",
+      avg_sir < 1.0 ~ "#f39c12",
+      avg_sir < 1.5 ~ "#e67e22",
+      TRUE          ~ "#e74c3c"
+    )
+    div(
+      style = "background:#fff; border:1px solid #ddd; border-radius:10px; padding:20px; margin-top:10px;",
+      h3(input$facility_hai, style = "margin-top:0;"),
+      p(paste0("Showing infection types relevant to: ", input$care_type),
+        style = "color:#555; font-size:13px; margin-bottom:10px;"),
+      div(style = paste0("background:", overall_color, "; color:white; padding:8px 14px;",
+                         "border-radius:6px; display:inline-block; font-size:15px;"),
+          strong(overall_label), " — Overall Infection Safety"),
+      hr(),
+      lapply(1:nrow(hosp_data), function(i) {
+        div(style = "display:flex; align-items:center; margin:10px 0;",
+            div(style = paste0("width:16px; height:16px; border-radius:50%; background:",
+                               hosp_data$dot_color[i], "; margin-right:12px; flex-shrink:0;")),
+            div(strong(hosp_data$Infection.Type[i]),
+                br(),
+                span(hosp_data$performance_label[i], style = "color:#555; font-size:13px;"))
+        )
+      }),
+      hr(),
+      p(paste0("This hospital performs better than the national average in ",
+               better_count, " out of ", total_count, " tracked infection categories."),
+        style = "font-size:15px; color:#333;")
+    )
+  }
+})
+output$summary_dt <- DT::renderDataTable({
+  state_data <- if (input$state_hai == "All") hai_cleaned else filter(hai_cleaned, State == input$state_hai)
+  state_data %>%
+    group_by(Facility.Name, State) %>%
+    summarise(
+      Avg_SIR = round(mean(Score, na.rm = TRUE), 2),
+      Better  = sum(Score < 1.0, na.rm = TRUE),
+      Total   = n(),
+      .groups = "drop"
+    ) %>%
+    mutate(
+      Safety_Rating = case_when(
+        Avg_SIR < 0.5 ~ "Excellent",
+        Avg_SIR < 1.0 ~ "Good",
+        Avg_SIR < 1.5 ~ "Fair",
+        TRUE          ~ "Poor"
+      ),
+      Summary = paste0(Better, " of ", Total, " categories better than average")
+    ) %>%
+    arrange(Avg_SIR) %>%
+    select(
+      "Hospital"       = Facility.Name,
+      "State"          = State,
+      "Safety Rating"  = Safety_Rating,
+      "Summary"        = Summary
+    )
+}, options = list(pageLength = 10, scrollX = TRUE), rownames = FALSE)
+# Nudge button — fixed req() check
+output$compare_nudge <- renderUI({
+  req(
+    isTruthy(input$facility_hai),
+    input$facility_hai != "",
+    input$facility_hai != "Select a hospital..."
+  )
+  div(
+    style = "margin-top:15px; padding:12px; background:#f0f4ff;
                border-radius:8px; border-left:4px solid #3498db;",
-       span("👉 Want to see how this hospital compares to others nearby?  "),
-       actionButton("go_compare", "Compare Hospitals →",
-                    style = "background:#3498db; color:white; border:none;
-                          border-radius:4px; padding:6px 12px; margin-left:8px;")
-     )
-   })
-   observeEvent(input$go_compare, {
-     updateTabsetPanel(session, "risk_tabs", selected = "Compare Hospitals")
-   })
-   output$gauge_grid <- renderUI({
-     infection_types <- input$infection_type_compare
-     req(length(infection_types) > 0)
-     
-     state_data <- if (input$state_hai_compare == "All") {
-       hai_cleaned
-     } else {
-       hai_cleaned %>% filter(State == input$state_hai_compare)
-     }
-     
-     gauge_boxes <- lapply(infection_types, function(inf) {
-       inf_data <- state_data %>% filter(Infection.Type == inf)
-       avg_sir   <- round(mean(inf_data$Score, na.rm = TRUE), 2)
-       
-       label <- case_when(
-         avg_sir < 0.5 ~ "Excellent",
-         avg_sir < 1.0 ~ "Good",
-         avg_sir < 1.5 ~ "Fair",
-         TRUE          ~ "Poor"
-       )
-       color <- case_when(
-         avg_sir < 0.5 ~ "#2ecc71",
-         avg_sir < 1.0 ~ "#f39c12",
-         avg_sir < 1.5 ~ "#e67e22",
-         TRUE          ~ "#e74c3c"
-       )
-       
-       column(4,
-              div(
-                style = paste0(
-                  "background:#fff; border:1px solid #ddd; border-radius:10px;",
-                  "padding:20px; margin:10px 0; text-align:center;",
-                  "border-top: 5px solid ", color, ";"
-                ),
-                h5(inf, style = "font-size:13px; color:#555; margin-bottom:10px;"),
-                div(
-                  style = paste0(
-                    "font-size:36px; font-weight:bold; color:", color, ";"
-                  ),
-                  avg_sir
-                ),
-                div(
-                  style = paste0(
-                    "display:inline-block; background:", color,
-                    "; color:white; border-radius:12px;",
-                    "padding:3px 12px; font-size:12px; margin-top:6px;"
-                  ),
-                  label
-                ),
-                p("Compared to the national average",
-                  style = "font-size:11px; color:#aaa; margin-top:8px;")
-              )
-       )
-     })
-     
-     # Wrap every 3 gauges into a fluidRow
-     rows <- split(gauge_boxes, ceiling(seq_along(gauge_boxes) / 3))
-     do.call(tagList, lapply(rows, function(r) fluidRow(r)))
-   })
+    span("👉 Want to see how this hospital compares to others nearby?  "),
+    actionButton("go_compare", "Compare Hospitals →",
+                 style = "background:#3498db; color:white; border:none;
+                            border-radius:4px; padding:6px 12px; margin-left:8px;")
+  )
+}) 
+observeEvent(input$go_compare, {
+  updateTabsetPanel(session, "risk_tabs", selected = "Compare Hospitals")
+})
+
+output$gauge_grid <- renderUI({
+  infection_types <- input$infection_type_compare
+  req(length(infection_types) > 0)
+  
+  state_data <- if (input$state_hai_compare == "All") {
+    hai_cleaned
+  } else {
+    hai_cleaned %>% filter(State == input$state_hai_compare)
+  }
+  
+  gauge_boxes <- lapply(infection_types, function(inf) {
+    inf_data <- state_data %>% filter(Infection.Type == inf)
+    avg_sir  <- round(mean(inf_data$Score, na.rm = TRUE), 2)
+    label <- case_when(
+      avg_sir < 0.5 ~ "Excellent",
+      avg_sir < 1.0 ~ "Good",
+      avg_sir < 1.5 ~ "Fair",
+      TRUE          ~ "Poor"
+    )
+    color <- case_when(
+      avg_sir < 0.5 ~ "#2ecc71",
+      avg_sir < 1.0 ~ "#f39c12",
+      avg_sir < 1.5 ~ "#e67e22",
+      TRUE          ~ "#e74c3c"
+    )
+    column(4,
+           div(
+             style = paste0(
+               "background:#fff; border:1px solid #ddd; border-radius:10px;",
+               "padding:20px; margin:10px 0; text-align:center;",
+               "border-top: 5px solid ", color, ";"
+             ),
+             h5(inf, style = "font-size:13px; color:#555; margin-bottom:10px;"),
+             div(style = paste0("font-size:36px; font-weight:bold; color:", color, ";"), avg_sir),
+             div(style = paste0(
+               "display:inline-block; background:", color,
+               "; color:white; border-radius:12px;",
+               "padding:3px 12px; font-size:12px; margin-top:6px;"
+             ), label),
+             p("Compared to the national average",
+               style = "font-size:11px; color:#aaa; margin-top:8px;")
+           )
+    )
+  })
+  rows <- split(gauge_boxes, ceiling(seq_along(gauge_boxes) / 3))
+  do.call(tagList, lapply(rows, function(r) fluidRow(r)))
+})
    
    # ---------------- Specialty Care: Birthing Hospitals ----------------
    output$birthing_summary_bar <- renderUI({
