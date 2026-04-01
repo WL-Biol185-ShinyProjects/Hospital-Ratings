@@ -302,28 +302,27 @@ navbarPage("Hospital Ratings",
                                hr(),
                                # Gauge grid: 3 gauges side by side
                                # Dynamic gauges grid
-                               uiOutput("gauge_grid")
-                      
-                      ), # end Compare Hospitals
-                    )
-           ),
-      # ---- New Readmission Risks tab ----
+                               uiOutput("gauge_grid"),
+                      ), #end compare hospitals
+
       tabPanel("Readmission Risks",
                br(),
                fluidRow(
                  column(6, selectInput("state_readmission", "Filter by State:", 
                                        choices = c("All", sort(unique(df_combined$State))),
                                        selected = "All")),
-                 column(6, uiOutput("readmission_kpi_cards"),
+                 column(6, uiOutput("readmission_kpi_cards"))
+                 ),
                         hr(),
                         uiOutput("readmission_scorecard"),
                         hr(),
                         h4("Full Data Table", style = "color:#555;"),
                         DT::dataTableOutput("readmission_table")
-      )
+      ) #end readmission
                      
-                    ) # end tabsetPanel
-                    ),
+                    ) #end tabset
+                    ), #end tab 
+                 
        
 navbarMenu("More",
            tabPanel("Table", DT::dataTableOutput("table")),

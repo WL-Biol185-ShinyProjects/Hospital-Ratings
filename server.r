@@ -474,8 +474,7 @@ function(input, output, session) {
   })
   
   do.call(tagList, tier_sections)
-  }) 
-  
+})
 # 3. Detailed table with color-coded risk tier
 output$readmission_table <- DT::renderDataTable({
   df <- df_combined
@@ -571,6 +570,19 @@ output$hospital_card <- renderUI({
         style = "font-size:15px; color:#333;")
     )
   }
+})
+output$facility_dropdown <- renderUI({
+  req(input$state_hai != "")
+  
+  facilities <- hai_cleaned %>%
+    filter(State == input$state_hai) %>%
+    pull(Facility.Name) %>%
+    unique() %>%
+    sort()
+  
+  selectInput("facility_hai", "Select a Hospital:",
+              choices = c("Select a hospital..." = "", facilities),
+              selected = "")
 })
 output$summary_dt <- DT::renderDataTable({
   state_data <- if (input$state_hai == "All") hai_cleaned else filter(hai_cleaned, State == input$state_hai)
