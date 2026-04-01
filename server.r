@@ -406,6 +406,7 @@ function(input, output, session) {
     if (!is.null(input$search_readmission) && input$search_readmission != "")
       df <- df %>% filter(grepl(input$search_readmission, `Facility Name`, ignore.case = TRUE))
     
+    df <- df %>% 
     mutate(
       Risk_Tier = case_when(
         `Avg Predicted Readmission Rate` >= 20 ~ "High Risk",
