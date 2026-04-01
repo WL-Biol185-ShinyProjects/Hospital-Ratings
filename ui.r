@@ -260,7 +260,7 @@ navbarPage("Hospital Ratings",
                                  column(6, selectInput("state_hai", "What state are you in?",
                                                        choices = c("Select a state..." = "", sort(unique(hai_cleaned$State))),
                                                        selected = "")),
-                                 column(6, uiOutput("facility_dropdown")),
+                                 column(6, uiOutput("facility_dropdown"))
 
                                ),
                                hr(),
@@ -303,7 +303,8 @@ navbarPage("Hospital Ratings",
                                uiOutput("gauge_grid")
                       
                       ), # end Compare Hospitals
-                      
+                    )
+           ),
       # ---- New Readmission Risks tab ----
       tabPanel("Readmission Risks",
                br(),
@@ -319,7 +320,7 @@ navbarPage("Hospital Ratings",
                         DT::dataTableOutput("readmission_table")
       )
                      
-                    ), # end tabsetPanel
+                    ) # end tabsetPanel
                     ),
        
 navbarMenu("More",
