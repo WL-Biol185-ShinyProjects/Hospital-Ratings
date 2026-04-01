@@ -7,7 +7,7 @@ library(plotly)
 library(shinyWidgets)
 library(bslib) 
 
-Directory <- read.csv("directory.csv", check.names = FALSE)
+directory <- read.csv("directory.csv", check.names = FALSE)
 staff_rating <- read.csv("staff_rating.csv", row.names = 1, check.names = FALSE)
 birthing <- read.csv("Birthing_Friendly_Hospitals_Geocoded.csv")
 VA_IPF_geocoded <- read.csv("VA_IPF_geocoded.csv")
@@ -91,20 +91,14 @@ function(input, output, session) {
 #DIRECTORY
   #map
   output$directoryMap <- renderLeaflet({
-    hospitalIcon <- makeIcon(
-      iconUrl = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='50' fill='%23c8d8e8'/%3E%3Ctext y='.85em' x='.1em' font-size='80'%3E%F0%9F%8F%A5%3C/text%3E%3C/svg%3E",
-      iconWidth = 45, iconHeight = 45
-    )
     map_data <- directory %>% filter(!is.na(latitude) & !is.na(longitude))
     
-    leaflet(directory) %>%
-      setView(lng = mean(directory$longitude, na.rm = TRUE),
-              lat = mean(directory$latitude, na.rm = TRUE), zoom = 4) %>%
+    leaflet(map_data) %>%
+      setView(lng = -98.5, lat = 39.5, zoom = 4) %>%
       addTiles() %>%
-      addMarkers(lng = ~longitude, lat = ~latitude, icon = hospitalIcon,
-                 popup = ~paste0("<b>", Facility.Name, "</b><br>", full_address,
-                                 "<br><a href='https://www.google.com/maps/dir/?api=1&destination=",
-                                 latitude, ",", longitude, "' target='_blank'>Get Directions</a>"))
+      addMarkers(lng = ~longitude, lat = ~latitude,
+                 clusterOptions = markerClusterOptions(),
+                 popup = ~paste0("<b>", Facility.Name, "</b><br>", full_address))
   })
   #cards:
   output$directory_cards <- renderUI({

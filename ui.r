@@ -5,7 +5,7 @@ library(shinyWidgets)
 library(DT)
 library(bslib)
 
-Directory <- read.csv("directory.csv", check.names = FALSE)
+directory <- read.csv("directory.csv", check.names = FALSE)
 staff_rating <- read.csv("staff_rating.csv")
 VA_IPF_geocoded <- read.csv("VA_IPF_geocoded.csv")
 hai_cleaned <- read.csv("hai_cleaned.csv")
@@ -64,7 +64,14 @@ navbarPage("Hospital Ratings",
                              )
                       )
                     ),
-                    fluidRow(column(12, leafletOutput("directoryMap", height = "600px"))),
+                    fluidRow(
+                      column(12,
+                             div(
+                               style = "height: 600px; width: 100%;",
+                               leafletOutput("directoryMap", height = "600px", width = "100%")
+                             )
+                      )
+                    ),
                     hr(),
                     fluidRow(
                       column(12,
