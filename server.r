@@ -7,6 +7,7 @@ library(plotly)
 library(shinyWidgets)
 library(bslib) 
 
+Directory <- read.csv("directory.csv", check.names = FALSE)
 staff_rating <- read.csv("staff_rating.csv", row.names = 1, check.names = FALSE)
 birthing <- read.csv("Birthing_Friendly_Hospitals_Geocoded.csv")
 VA_IPF_geocoded <- read.csv("VA_IPF_geocoded.csv")
@@ -87,7 +88,66 @@ function(input, output, session) {
     overall     = "Overall Rating"
   )
   
-
+#DIRECTORY
+  #map
+  output$directoryMap <- renderLeaflet({
+    hospitalIcon <- makeIcon(
+      iconUrl = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='50' fill='%23c8d8e8'/%3E%3Ctext y='.85em' x='.1em' font-size='80'%3E%F0%9F%8F%A5%3C/text%3E%3C/svg%3E",
+      iconWidth = 45, iconHeight = 45
+    )
+    map_data <- directory %>% filter(!is.na(latitude) & !is.na(longitude))
+    
+    leaflet(directory) %>%
+      setView(lng = mean(directory$longitude, na.rm = TRUE),
+              lat = mean(directory$latitude, na.rm = TRUE), zoom = 4) %>%
+      addTiles() %>%
+      addMarkers(lng = ~longitude, lat = ~latitude, icon = hospitalIcon,
+                 popup = ~paste0("<b>", Facility.Name, "</b><br>", full_address,
+                                 "<br><a href='https://www.google.com/maps/dir/?api=1&destination=",
+                                 latitude, ",", longitude, "' target='_blank'>Get Directions</a>"))
+  })
+  #cards:
+  output$directory_cards <- renderUI({
+    data <- directory
+    
+    # ⬅️ ADDED - remove rows with no address
+    data <- data %>% filter(!is.na(full_address) & full_address != "")
+    
+    if (input$state_dir != "All") data <- filter(data, State == input$state_dir)
+    
+    if (nrow(data) == 0) {
+      return(p("No facilities found for the selected state."))
+    }
+    
+    cards <- lapply(1:nrow(data), function(i) {
+      div(style = "background-color: #f5f5f5; border-radius: 10px; padding: 15px; margin: 10px; display: inline-block; width: 280px; vertical-align: top; box-shadow: 2px 2px 5px rgba(0,0,0,0.1);",
+          
+          h4(style = "color: #1a3a5c; margin-top: 0;", "🏥 ", data$Facility.Name[i]),
+          
+          p(style = "color: #555;", "📍 ", data$full_address[i]),
+          
+          if (isTRUE(!is.na(data$Telephone.Number[i]) && data$Telephone.Number[i] != "")) {
+            p(style = "font-size: 16px; font-weight: bold;", "☎️ ", data$Telephone.Number[i])
+          },
+          
+          tags$a(href = paste0("https://www.google.com/maps/dir/?api=1&destination=",
+                               data$latitude[i], ",", data$longitude[i]),
+                 target = "_blank",
+                 class = "btn btn-sm",
+                 style = "background-color: #1a3a5c; color: white; border: none; margin-top: 6px; margin-right: 4px;",
+                 "🗺️ Directions"),
+          
+          if (isTRUE(!is.na(data$Telephone.Number[i]) && data$Telephone.Number[i] != "")) {
+            tags$a(href = paste0("tel:", gsub("[^0-9]", "", data$Telephone.Number[i])),
+                   class = "btn btn-sm",
+                   style = "background-color: #e63946; color: white; border: none; margin-top: 6px;",
+                   "📞 Call")
+          }
+      )
+    })
+    do.call(tagList, cards)
+  })
+  #end directory
   
   output$hvbp_hospital_card <- renderUI({
     req(input$facility_hvbp != "" && input$facility_hvbp != "Select a hospital...")

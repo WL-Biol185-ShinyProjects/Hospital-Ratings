@@ -5,7 +5,7 @@ library(shinyWidgets)
 library(DT)
 library(bslib)
 
-Directory <- read.csv("directory.csv")
+Directory <- read.csv("directory.csv", check.names = FALSE)
 staff_rating <- read.csv("staff_rating.csv")
 VA_IPF_geocoded <- read.csv("VA_IPF_geocoded.csv")
 hai_cleaned <- read.csv("hai_cleaned.csv")
@@ -75,9 +75,9 @@ navbarPage("Hospital Ratings",
                              uiOutput("directory_cards")
                       )
                     )
-           )
+           ),
            
------------#end directory page-------------------------
+#-----------end directory page-------------------------
            
            tabPanel("Star Ratings",
                     verbatimTextOutput("summary")
