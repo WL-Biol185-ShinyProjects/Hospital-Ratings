@@ -397,7 +397,15 @@ function(input, output, session) {
       column(3, make_card("📊", "Avg Predicted Rate", paste0(avg_rate, "%"), "#e74c3c"))
     )
   })
-  df <- df %>%
+  output$readmission_scorecard <- renderUI({
+    df <- df_combined
+    
+    if (input$state_readmission != "All")
+      df <- df %>% filter(State == input$state_readmission)
+    
+    if (!is.null(input$search_readmission) && input$search_readmission != "")
+      df <- df %>% filter(grepl(input$search_readmission, `Facility Name`, ignore.case = TRUE))
+    
     mutate(
       Risk_Tier = case_when(
         `Avg Predicted Readmission Rate` >= 20 ~ "High Risk",
@@ -466,7 +474,8 @@ function(input, output, session) {
   })
   
   do.call(tagList, tier_sections)
-}
+  }) 
+  
 # 3. Detailed table with color-coded risk tier
 output$readmission_table <- DT::renderDataTable({
   df <- df_combined

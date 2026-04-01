@@ -290,6 +290,8 @@ navbarPage("Hospital Ratings",
                                    selected = c(
                                      "Central Line Infection",
                                      "Urinary Tract Infection",
+                                     "Surgical Site - Colon",
+                                     "Surgical Site - Hysterectomy",
                                      "MRSA Blood Infection",
                                      "C. Difficile Infection"
                                    ),
