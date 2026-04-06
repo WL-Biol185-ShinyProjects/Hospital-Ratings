@@ -5,6 +5,7 @@ library(shinyWidgets)
 library(DT)
 library(bslib)
 
+hospitalgen <- read.csv("hospital_general_info.csv", check.names = FALSE)
 directory <- read.csv("directory.csv", check.names = FALSE)
 staff_rating <- read.csv("staff_rating.csv")
 VA_IPF_geocoded <- read.csv("VA_IPF_geocoded.csv")
@@ -176,9 +177,21 @@ navbarPage("Hospital Ratings",
            ),
            
 #-----------end directory page-------------------------
-           
+
+#----------STAR RATINGS PAGE-----------------           
            tabPanel("Star Ratings",
-                    verbatimTextOutput("summary")
+                    fluidRow(
+                      column(
+                        3,
+                        selectInput("state", "State", choices = c("All", sort(unique(hospital_df$state)))),
+                        selectInput("type", "Hospital Type", choices = c("All", sort(unique(hospital_df$hospital_type)))),
+                        selectInput("ownership", "Hospital Ownership", choices = c("All", sort(unique(hospital_df$hospital_ownership))))
+                      ),
+                      column(
+                        9,
+                        tableOutput("cards_table")
+                      )
+                    )
            ),
            
            tabPanel("Staff & Communication",
