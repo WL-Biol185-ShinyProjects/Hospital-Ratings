@@ -17,7 +17,7 @@ hai_cleaned <- read.csv("hai_cleaned.csv")
 SurgCenters <- read.csv("SurgCenters.csv", check.names = FALSE)
 readmission <- read.csv("FY_2025_Hospital_Readmissions_Reduction_Program_Hospital.csv", check.names = FALSE)  
 hvbp_raw <- read.csv("hvbp_person_and_community_engagement.csv", check.names = FALSE)
-hospital
+
 
 hvbp_clean <- hvbp_raw %>%
   select(
