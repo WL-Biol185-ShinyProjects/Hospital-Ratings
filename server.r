@@ -299,31 +299,74 @@ function(input, output, session) {
     cols
   })
   
-  output$staff_chart <- renderPlot({
-    active_cols <- active_cols_r()
-    
-    data <- staff_filtered() %>%
-      summarise(across(all_of(active_cols), ~ mean(.x, na.rm = TRUE))) %>%
-      pivot_longer(everything(), names_to = "Measure", values_to = "Score") %>%
-      mutate(
-        Measure = label_map[Measure],        
-        Score   = round(Score, 1),
+output$staff_chart <- renderUI({
+  active_cols <- active_cols_r()
+
+  data <- staff_filtered() %>%
+    summarise(across(all_of(active_cols), ~ mean(as.numeric(.x), na.rm = TRUE))) %>%
+    pivot_longer(cols = everything(), names_to = "Measure", values_to = "Score") %>%
+    mutate(
+      Measure = unname(label_map[as.character(Measure)]),
+      Score = round(as.numeric(Score), 1),
+      color = case_when(
+        Score >= 80 ~ "#2ecc71",
+        Score >= 65 ~ "#f1c40f",
+        Score >= 50 ~ "#e67e22",
+        TRUE ~ "#e74c3c"
+      ),
+      icon = case_when(
+        Score >= 80 ~ "🟢",
+        Score >= 65 ~ "🟡",
+        Score >= 50 ~ "🟠",
+        TRUE ~ "🔴"
+      ),
+      label = case_when(
+        Score >= 80 ~ "Excellent",
+        Score >= 65 ~ "Good",
+        Score >= 50 ~ "Fair",
+        !is.na(Score) ~ "Needs Improvement",
+        TRUE ~ "No Data"
       )
-        ggplot(data, aes(x = reorder(Measure, Score), y = Score, fill = Score)) +
-          geom_col(width = 0.7) +
-          coord_flip() +
-          scale_y_continuous(limits = c(0, 100)) +
-          labs(x = NULL, y = "Positive response rate") +
-          theme_minimal()
+    ) %>%
+    filter(!is.na(Score), !is.na(Measure))
+  if (nrow(data) == 0) {
+    return(div(style = "padding:20px; color:#666;", "No patient experience data available for the current selection."))
+  }
+  rows <- lapply(seq_len(nrow(data)), function(i) {
+    div(style = "margin-bottom:18px;",
+        div(style = "display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;",
+            div(style = "font-size:14px; font-weight:bold; color:#333;",
+                paste0(data$icon[i], "  ", data$Measure[i])),
+            div(style = paste0("font-size:14px; font-weight:bold; color:", data$color[i], ";"),
+                paste0(data$Score[i], "%  ", data$label[i]))
+        ),
+        div(style = "background:#f0f0f0; border-radius:50px; height:22px; width:100%; overflow:hidden;",
+            div(style = paste0(
+              "background:", data$color[i], ";",
+              "width:", data$Score[i], "%;",
+              "height:100%; border-radius:50px;"
+            ))
+        )
+    )
   })
+
+  div(style = "background:#fff; border-radius:10px; padding:24px; box-shadow:1px 2px 6px rgba(0,0,0,0.08); margin:10px 0;",
+      div(style = "font-size:16px; font-weight:bold; color:#333; margin-bottom:6px;",
+          "Patient Experience Scores"),
+      div(style = "font-size:12px; color:#888; margin-bottom:20px;",
+          "Average positive response rate across filtered hospitals"),
+      div(rows)
+  )
+})
   
   # TABLE
-  output$staff_table <- renderTable({
-    active_cols <- active_cols_r()
-    
-    staff_filtered() %>%
-      select(`Facility Name`, State, all_of(active_cols))
-  })
+output$staff_table <- renderTable({
+  active_cols <- active_cols_r()
+  
+  staff_filtered() %>%
+    select(`Facility Name`, State, any_of(active_cols)) %>%
+    filter(if_all(any_of(active_cols), ~ !is.na(.x)))
+})
   
   # RISK FACTORS — FIND MY HOSPITAL
   output$facility_readmission_dropdown <- renderUI({
