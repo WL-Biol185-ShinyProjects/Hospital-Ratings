@@ -35,15 +35,100 @@ df_combined <- readmission_clean %>%
 navbarPage("Hospital Ratings",
            theme = bslib::bs_theme(bootswatch = "lumen"),
            
-           # DIRECTORY MAP---------------
-           tabPanel("Directory Map",
-                    sidebarLayout(
-                      sidebarPanel(
-                        radioButtons("plotType", "Plot type",
-                                     c("Scatter"="p", "Line"="l"))
-                      ),
-                      mainPanel(
-                        plotOutput("plot")
+           # HOME PAGE ---------------
+           tabPanel("Home",
+                    fluidRow(
+                      column(12,
+                             div(
+                               style = "text-align: center; padding: 40px 20px;",
+                               h1(style = "color: #1a3a5c; font-size: 48px;", "🏥 Hospital Ratings"),
+                               p(style = "color: #555; font-size: 18px; max-width: 700px; margin: auto;",
+                                 "Explore hospital quality, safety, and patient experience data 
+                                  across the United States. This website is designed to help patients make informed decisions on where they choose to receive care.")
+                             )
+                      )
+                    ),
+                    hr(),
+                    # About section
+                    fluidRow(
+                      column(12,
+                             div(
+                               style = "background:#f8f9fa; border-radius:10px; padding:25px; margin:10px;",
+                               h3(style = "color:#1a3a5c;", "ℹ️ About This App"),
+                               p(style = "color:#555; font-size:14px;",
+                                 "This application uses publicly available data from the Centers for Medicare & 
+                                  Medicaid Services (CMS) to help patients, researchers, and healthcare professionals 
+                                  explore hospital quality metrics across the United States."),
+                               p(style = "color:#555; font-size:14px;",
+                                 "Data includes star ratings, patient experience scores, infection rates, 
+                                  readmission rates, and more.")
+                             )
+                      )
+                    ),
+                    # About Us section
+                    fluidRow(
+                      column(12,
+                             div(
+                               style = "padding: 30px 10px;",
+                               h2(style = "color: #1a3a5c; text-align: center; margin-bottom: 5px;", "About Us"),
+                               hr(),
+                               
+                               # School logo
+                               fluidRow(
+                                 column(12,
+                                        div(style = "text-align: center; margin-bottom: 25px;",
+                                            tags$img(src = "logo.png", height = "80px",
+                                                     style = "object-fit: contain;")
+                                        )
+                                 )
+                               ),
+                               
+                               # Project description paragraph
+                               fluidRow(
+                                 column(8, offset = 2,
+                                        div(style = "text-align: center; margin-bottom: 30px;",
+                                            p(style = "color: #555; font-size: 14px; line-height: 1.8;",
+                                              "Hi! We are undergraduate Neuroscience Students at Washington and Lee University planning to pursue healthcare professions. This project came from our collective interest in public health and was developed as part of a data science course. 
+               Our goal was to make hospital quality data more accessible and understandable 
+               for the public, to help prospective patients better understand their options for healthcare across the country.")
+                                        )
+                                 )
+                               ),
+                               
+                               # Team member cards
+                               fluidRow(
+                                 # Person 1
+                                 column(6,
+                                        div(style = "background:#fff; border:1px solid #b3d1f7; border-radius:12px; 
+                       padding:25px; margin:10px; text-align:center;
+                       box-shadow: 2px 2px 8px rgba(0,0,0,0.08);",
+                                            tags$img(src = "maren.png", height = "150px", width = "150px",
+                                                     style = "border-radius: 50%; object-fit: cover; 
+                              border: 3px solid #8ab4f8; margin-bottom: 15px;"),
+                                            h4(style = "color: #1a3a5c; margin: 10px 0 5px 0;", "Maren Barclay"),
+                                            p(style = "color: #888; font-size: 13px; margin-bottom: 15px;", "Role / Major"),
+                                            p(style = "color: #555; font-size: 13px; text-align: left; line-height: 1.7;",
+                                              "Add a brief bio here — your background, interests, and what you contributed 
+               to this project.")
+                                        )
+                                 ),
+                                 # Person 2
+                                 column(6,
+                                        div(style = "background:#fff; border:1px solid #b3d1f7; border-radius:12px; 
+                       padding:25px; margin:10px; text-align:center;
+                       box-shadow: 2px 2px 8px rgba(0,0,0,0.08);",
+                                            tags$img(src = "person2.png", height = "150px", width = "150px",
+                                                     style = "border-radius: 50%; object-fit: cover; 
+                              border: 3px solid #8ab4f8; margin-bottom: 15px;"),
+                                            h4(style = "color: #1a3a5c; margin: 10px 0 5px 0;", "Joanne Lee"),
+                                            p(style = "color: #888; font-size: 13px; margin-bottom: 15px;", "Role / Major"),
+                                            p(style = "color: #555; font-size: 13px; text-align: left; line-height: 1.7;",
+                                              "Add a brief bio here — your background, interests, and what they contributed 
+               to this project.")
+                                        )
+                                 )
+                               )
+                             )
                       )
                     )
            ),
