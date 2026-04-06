@@ -184,6 +184,7 @@ navbarPage("Hospital Ratings",
            tabPanel("Staff & Communication",
                     tabsetPanel(
                       tabPanel("Patient Experience",
+                               br(),
                                fluidRow(
                                  column(3, selectInput("state_staff", "Filter by State:",
                                                        choices = c("All", sort(unique(staff_rating$State))),
@@ -205,6 +206,7 @@ navbarPage("Hospital Ratings",
                       ),
                       
                       tabPanel("Engagement Scores",
+                               br(),
                                fluidRow(
                                  column(3, selectInput("state_hvbp", "Filter by State:",
                                                        choices = NULL,
@@ -212,11 +214,11 @@ navbarPage("Hospital Ratings",
                                  column(3, selectInput("facility_hvbp", "Look Up a Hospital:",
                                                        choices = c("Select a hospital..." = ""),
                                                        selected = ""))
-                               )
+                               ),
+                               hr(),
+                               uiOutput("hvbp_hospital_card")
                       )
-                      ),
-                      hr(),
-                      uiOutput("hvbp_hospital_card")
+                      )
                     ),
 
            
