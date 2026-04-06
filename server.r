@@ -75,27 +75,141 @@ make_stars <- function(n) {
 }                      
 hospitalgen <- hospitalgen %>%                                       
   mutate(                                                            
-    overall_star_display = map_chr(`Hospital overall rating`, make_stars)  
+    overall_star_display = map_chr(`Hospital overall rating`, make_stars),
+    emergency_badge = ifelse(`Emergency Services` == "Yes", "🚨 Emergency", ""),
+    birthing_badge = ifelse(`Meets criteria for birthing friendly designation` == "Y", "🤱 Birthing Friendly", "")  
   ) 
 
 #server function
 function(input, output, session) {
 
-  # --- STAR RATINGS FILTER ---
-  filtered_data <- reactive({
-    hospitalgen %>%
-      filter(
-        (input$state == "All" | State == input$state),
-        (input$type == "All" | `Hospital Type` == input$type),
-        (input$ownership == "All" | `Hospital Ownership` == input$ownership)
-      )
+  # --- STAR RATINGS PAGE ---
+  
+  # filtered data
+  sr_filtered <- reactive({
+    df <- hospitalgen
+    if (input$sr_state != "All") df <- df %>% filter(State == input$sr_state)
+    if (input$sr_type != "All")  df <- df %>% filter(`Hospital Type` == input$sr_type)
+    if (input$sr_ownership != "All") df <- df %>% filter(`Hospital Ownership` == input$sr_ownership)
+    if (nchar(input$sr_search) > 0)
+      df <- df %>% filter(grepl(input$sr_search, `Facility Name`, ignore.case = TRUE))
+    df
   })
   
-  output$cards_table <- renderTable({
-    filtered_data() %>%
-      select(
-        `Facility Name`, `City/Town`, State, `Hospital overall rating`, overall_star_display
+  # render cards
+  output$hospital_cards <- renderUI({
+    rows <- sr_filtered()
+    if (nrow(rows) == 0) return(p("No hospitals match your filters."))
+    
+    cards <- lapply(1:nrow(rows), function(i) {
+      h <- rows[i, ]
+      stars <- ifelse(is.na(h$overall_star_display), "Not Rated", h$overall_star_display)
+      rating <- suppressWarnings(as.numeric(h$`Hospital overall rating`))
+      star_color <- case_when(
+        is.na(rating) ~ "#888",
+        rating >= 4   ~ "#2e7d32",
+        rating == 3   ~ "#f9a825",
+        TRUE          ~ "#c62828"
       )
+      
+      div(
+        style = "background:#fff; border:1px solid #b3d1f7; border-radius:12px;
+                 padding:20px; margin-bottom:15px;
+                 box-shadow: 2px 2px 8px rgba(0,0,0,0.08);",
+        
+        # hospital name + location
+        h4(style = "color:#1a3a5c; margin:0 0 4px 0;", h$`Facility Name`),
+        p(style = "color:#888; font-size:13px; margin:0 0 10px 0;",
+          paste0(h$`City/Town`, ", ", h$State, " — ", h$`Hospital Type`)),
+        
+        # star rating
+        div(style = paste0("font-size:22px; color:", star_color, "; margin-bottom:8px;"), stars),
+        
+        # badges
+        div(style = "margin-bottom:10px;",
+            if (h$emergency_badge != "") span(style = "background:#e8f0fe; border-radius:12px;
+                padding:3px 10px; font-size:12px; margin-right:6px;", h$emergency_badge),
+            if (h$birthing_badge != "")  span(style = "background:#fce4ec; border-radius:12px;
+                padding:3px 10px; font-size:12px;", h$birthing_badge)
+        ),
+        
+        # measure counts
+        fluidRow(
+          column(4,
+                 div(style = "background:#f8f9fa; border-radius:8px; padding:10px; text-align:center;",
+                     tags$b(style = "color:#1a3a5c; font-size:12px;", "Mortality"),
+                     p(style = "margin:4px 0 0 0; font-size:12px;",
+                       paste0("✅ ", h$`Count of MORT Measures Better`, " better")),
+                     p(style = "margin:2px 0; font-size:12px;",
+                       paste0("➖ ", h$`Count of MORT Measures No Different`, " average")),
+                     p(style = "margin:2px 0; font-size:12px;",
+                       paste0("❌ ", h$`Count of MORT Measures Worse`, " worse"))
+                 )
+          ),
+          column(4,
+                 div(style = "background:#f8f9fa; border-radius:8px; padding:10px; text-align:center;",
+                     tags$b(style = "color:#1a3a5c; font-size:12px;", "Safety"),
+                     p(style = "margin:4px 0 0 0; font-size:12px;",
+                       paste0("✅ ", h$`Count of Safety Measures Better`, " better")),
+                     p(style = "margin:2px 0; font-size:12px;",
+                       paste0("➖ ", h$`Count of Safety Measures No Different`, " average")),
+                     p(style = "margin:2px 0; font-size:12px;",
+                       paste0("❌ ", h$`Count of Safety Measures Worse`, " worse"))
+                 )
+          ),
+          column(4,
+                 div(style = "background:#f8f9fa; border-radius:8px; padding:10px; text-align:center;",
+                     tags$b(style = "color:#1a3a5c; font-size:12px;", "Readmissions"),
+                     p(style = "margin:4px 0 0 0; font-size:12px;",
+                       paste0("✅ ", h$`Count of READM Measures Better`, " better")),
+                     p(style = "margin:2px 0; font-size:12px;",
+                       paste0("➖ ", h$`Count of READM Measures No Different`, " average")),
+                     p(style = "margin:2px 0; font-size:12px;",
+                       paste0("❌ ", h$`Count of READM Measures Worse`, " worse"))
+                 )
+          )
+        )
+      )
+    })
+    do.call(tagList, cards)
+  })
+  
+  # compare checkboxes — shows names of filtered hospitals
+  output$compare_checkboxes <- renderUI({
+    nms <- sr_filtered()$`Facility Name`
+    if (length(nms) == 0) return(p("No hospitals to compare.", style = "font-size:12px;"))
+    checkboxGroupInput("compare_selected", NULL, choices = nms)
+  })
+  
+  # compare panel
+  output$compare_panel <- renderUI({
+    req(input$compare_btn)
+    isolate({
+      selected <- input$compare_selected
+      if (is.null(selected) || length(selected) == 0)
+        return(div(style="color:#c62828;", "Please select hospitals to compare."))
+      if (length(selected) > 3)
+        return(div(style="color:#c62828;", "Please select 3 or fewer hospitals."))
+      
+      df <- hospitalgen %>% filter(`Facility Name` %in% selected)
+      
+      cols <- c("Facility Name", "State", "Hospital overall rating",
+                "Count of MORT Measures Better", "Count of MORT Measures Worse",
+                "Count of Safety Measures Better", "Count of Safety Measures Worse",
+                "Count of READM Measures Better", "Count of READM Measures Worse",
+                "Emergency Services", "Meets criteria for birthing friendly designation")
+      
+      div(
+        style = "background:#e8f0fe; border-radius:10px; padding:15px; margin-bottom:20px;",
+        h4(style = "color:#1a3a5c;", "⚖️ Side-by-Side Comparison"),
+        renderTable(df %>% select(all_of(cols)))
+      )
+    })
+  })
+  
+  # clear compare
+  observeEvent(input$clear_compare, {
+    updateCheckboxGroupInput(session, "compare_selected", selected = character(0))
   })
   
   # Populate HVBP state dropdown on startup

@@ -179,20 +179,50 @@ navbarPage("Hospital Ratings",
 #-----------end directory page-------------------------
 
 #----------STAR RATINGS PAGE-----------------           
-           tabPanel("Star Ratings",
-                    fluidRow(
-                      column(
-                        3,
-                        selectInput("state", "State", choices = c("All", sort(unique(hospitalgen$State)))),
-                        selectInput("type", "Hospital Type", choices = c("All", sort(unique(hospitalgen$`Hospital Type`)))),
-                        selectInput("ownership", "Hospital Ownership", choices = c("All", sort(unique(hospitalgen$`Hospital Ownership`))))
-                      ),
-                      column(
-                        9,
-                        tableOutput("cards_table")
+tabPanel("Star Ratings",
+         div(style = "padding: 20px;",
+             # info banner
+             div(
+               style = "background:#e8f0fe; border:1px solid #8ab4f8; border-radius:8px;
+               padding:12px 20px; margin-bottom:15px;",
+               tags$b("ℹ️ About Star Ratings"),
+               tags$p("Overall star ratings are provided by the Centers for Medicare & Medicaid Services (CMS).
+              Ratings range from 1 to 5 stars based on quality measures across multiple categories.",
+                      style = "margin:6px 0 0 0; color:#555; font-size:13px;")
+             ),
+             # filters
+             fluidRow(
+               column(3,
+                      selectInput("sr_state", "State",
+                                  choices = c("All", sort(unique(hospitalgen$State)))),
+                      selectInput("sr_type", "Hospital Type",
+                                  choices = c("All", sort(unique(hospitalgen$`Hospital Type`)))),
+                      selectInput("sr_ownership", "Hospital Ownership",
+                                  choices = c("All", sort(unique(hospitalgen$`Hospital Ownership`)))),
+                      textInput("sr_search", "Search by Name", placeholder = "e.g. Johns Hopkins"),
+                      hr(),
+                      # compare panel
+                      div(
+                        style = "background:#f8f9fa; border-radius:8px; padding:15px;",
+                        h5(style = "color:#1a3a5c;", "⚖️ Compare Hospitals"),
+                        p(style = "color:#888; font-size:12px;", "Select up to 3 hospitals to compare side by side."),
+                        uiOutput("compare_checkboxes"),
+                        actionButton("compare_btn", "Compare Selected",
+                                     style = "background:#1a3a5c; color:white; width:100%; margin-top:10px;"),
+                        actionButton("clear_compare", "Clear",
+                                     style = "width:100%; margin-top:5px;")
                       )
-                    )
-           ),
+               ),
+               column(9,
+                      # compare table (hidden until compare is clicked)
+                      uiOutput("compare_panel"),
+                      hr(),
+                      # cards
+                      uiOutput("hospital_cards")
+               )
+             )
+         )
+),
            
            tabPanel("Staff & Communication",
                     tabsetPanel(
