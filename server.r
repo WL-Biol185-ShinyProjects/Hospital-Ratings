@@ -244,79 +244,92 @@ function(input, output, session) {
   })
   
   measure_labels <- c(
-    "Patients who reported that staff definitely gave care in a professional way and the facility was clean"       = "Staff Care",
-    "Patients who reported that staff definitely communicated about what to expect during and after the procedure" = "Communication",
-    "Patients who gave the facility a rating of 9 or 10 on a scale from 0 (lowest) to 10 (highest)"              = "High Rating",
-    "Patients who reported YES they would DEFINITELY recommend the facility to family or friends"                  = "Would Recommend"
+    "Staff Care"      = "Staff Care Quality",
+    "Communication"   = "Communication",
+    "High Rating"     = "Facility Rating",
+    "Would Recommend" = "Recommendation"
   )
   
-  pos_cols <- c(
-    "Patients who reported that staff definitely gave care in a professional way and the facility was clean",
-    "Patients who reported that staff definitely communicated about what to expect during and after the procedure",
-    "Patients who gave the facility a rating of 9 or 10 on a scale from 0 (lowest) to 10 (highest)",
-    "Patients who reported YES they would DEFINITELY recommend the facility to family or friends"
-  )
+  pos_cols <- c("Staff Care", "Communication", "High Rating", "Would Recommend")
   
-  output$staff_chart <- renderPlot({
+  output$staff_chart <- renderTable({
     req(input$measure)
     
     active_cols <- pos_cols[
-      c("staff", "communication", "rating", "recommend") %in% input$measure
+      c("Staff Care", "Communication", "High Rating", "Would Recommend") %in% pos_cols &
+        c("staff", "communication", "rating", "recommend") %in% input$measure
     ]
     req(length(active_cols) > 0)
+
     
     data <- staff_filtered() %>%
       select(`Facility Name`, all_of(active_cols)) %>%
-      rowwise() %>%
-      mutate(avg_score = mean(c_across(all_of(active_cols)), na.rm = TRUE)) %>%
-      ungroup() %>%
-      mutate(Tier = case_when(
-        avg_score >= 80 ~ "Excellent",
-        avg_score >= 65 ~ "Good",
-        avg_score >= 50 ~ "Fair",
-        TRUE            ~ "Poor"
-      ))
-    
-    heatmap_data <- data %>%
-      group_by(Tier) %>%
       summarise(across(all_of(active_cols), ~ mean(.x, na.rm = TRUE))) %>%
-      pivot_longer(-Tier, names_to = "Measure", values_to = "Score") %>%
+      pivot_longer(everything(), names_to = "Measure", values_to = "Score") %>%
       mutate(
         Measure = recode(Measure, !!!measure_labels),
-        Tier    = factor(Tier, levels = c("Excellent", "Good", "Fair", "Poor"))
-      ) %>%
-      filter(!is.na(Score))
-    
-    ggplot(heatmap_data, aes(x = Measure, y = Tier, fill = Score)) +
-      geom_tile(color = "white", linewidth = 1.5) +
-      geom_text(aes(label = paste0(round(Score, 1), "%")),
-                size = 5, fontface = "bold", color = "white") +
-      scale_fill_gradient(low = "#e74c3c", high = "#2ecc71",
-                          limits = c(0, 100), name = "% Positive") +
-      labs(
-        title = "Patient Experience by Performance Tier",
-        subtitle = "Average positive response rate per measure",
-        x = "", y = ""
-      ) +
-      theme_minimal(base_size = 13) +
-      theme(
-        legend.position  = "right",
-        axis.text.x      = element_text(face = "bold", size = 11),
-        axis.text.y      = element_text(face = "bold", size = 11),
-        panel.grid       = element_blank(),
-        plot.title       = element_text(face = "bold", size = 14),
-        plot.subtitle    = element_text(color = "#555", size = 11)
+        Score   = round(Score, 1),
+        color = case_when(
+          Score >= 80 ~ "#2ecc71",
+          Score >= 65 ~ "#f1c40f",
+          Score >= 50 ~ "#e67e22",
+          TRUE        ~ "#e74c3c"
+        ), 
+        icon = case_when(
+          Score >= 80 ~ "🟢",
+          Score >= 65 ~ "🟡",
+          Score >= 50 ~ "🟠",
+          TRUE        ~ "🔴"
+        ),
+        label = case_when(
+          Score >= 80 ~ "Excellent",
+          Score >= 65 ~ "Good",
+          Score >= 50 ~ "Fair",
+          TRUE        ~ "Needs Improvement"
+        )
       )
+    rows <- lapply(1:nrow(data), function(i) {
+      div(style = "margin-bottom:18px;",
+          # Measure label and score on same line
+          div(style = "display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;",
+              div(style = "font-size:14px; font-weight:bold; color:#333;",
+                  paste0(data$icon[i], "  ", data$Measure[i])),
+              div(style = paste0("font-size:14px; font-weight:bold; color:", data$color[i], ";"),
+                  paste0(data$Score[i], "%  ", data$label[i]))
+          ),
+          # Progress bar track
+          div(style = paste0(
+            "background:#f0f0f0; border-radius:50px; height:22px; width:100%; overflow:hidden;"),
+            # Filled portion
+            div(style = paste0(
+              "background:", data$color[i], ";",
+              "width:", data$Score[i], "%;",
+              "height:100%; border-radius:50px;",
+              "transition: width 0.6s ease;"))
+          )
+      )
+    })
+    
+    div(style = "background:#fff; border-radius:10px; padding:24px;
+               box-shadow:1px 2px 6px rgba(0,0,0,0.08); margin:10px 0;",
+        div(style = "font-size:16px; font-weight:bold; color:#333; margin-bottom:6px;",
+            "Patient Experience Scores"),
+        div(style = "font-size:12px; color:#888; margin-bottom:20px;",
+            "Average positive response rate across filtered hospitals"),
+        div(rows)
+    )
+  
   })
   
   output$staff_table <- renderTable({
     req(input$measure)
     active_cols <- pos_cols[
-      c("staff", "communication", "rating", "recommend") %in% input$measure
+      c("Staff Care", "Communication", "High Rating", "Would Recommend") %in% pos_cols &
+        c("staff", "communication", "rating", "recommend") %in% input$measure
     ]
+    
     staff_filtered() %>%
-      select(`Facility Name`, State, all_of(active_cols)) %>%
-      rename_with(~ recode(., !!!measure_labels), all_of(active_cols))
+      select(`Facility Name`, State, all_of(active_cols))
   })
   
   # RISK FACTORS — FIND MY HOSPITAL

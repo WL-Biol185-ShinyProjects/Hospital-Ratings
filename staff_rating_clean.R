@@ -5,19 +5,18 @@ library(shiny)
 # Load data
 staff_rating <-ASCQR_OAS_CAHPS_BY_ASC
 
-#cleaning columns 
-staff_rating <- staff_rating %>% select( - `Facility ID`)
-staff_rating <- staff_rating %>% select( - `County/Parish`)
-staff_rating <- staff_rating %>% select( - `Facilities and staff linear mean score`)
-staff_rating <- staff_rating %>% select( - `Patients'rating of the facility linear mean score`)
-staff_rating <- staff_rating %>% select( - `Patients reccomending the facility linear mean score`)
-staff_rating <- staff_rating %>% select( - `Footnote`)
-staff_rating <- staff_rating %>% select( - `Number of Completed Surveys`)
-staff_rating <- staff_rating %>% select( - `Survey Response Percent Rate`)
-staff_rating <- staff_rating %>% select( - `Start Date`)
-staff_rating <- staff_rating %>% select( - `End Date`)
+staff_rating <- staff_rating %>%
+  rename(
+    `Facility Name`  = Facility.Name,
+    `State`          = State,
+    `Staff Care`     = Patients.who.reported.that.staff.definitely.gave.care.in.a.professional.way.and.the.facility.was.clean,
+    `Communication`  = Patients.who.reported.that.staff.definitely.communicated.about.what.to.expect.during.and.after.the.procedure,
+    `High Rating`    = Patients.who.gave.the.facility.a.rating.of.9.or.10.on.a.scale.from.0..lowest..to.10..highest.,
+    `Would Recommend`= Patients.who.reported.YES.they.would.DEFINITELY.recommend.the.facility.to.family.or.friends
+  ) %>%
+  select(`Facility Name`, State, `Staff Care`, `Communication`, 
+         `High Rating`, `Would Recommend`) %>%
+  mutate(across(c(`Staff Care`, `Communication`, `High Rating`, `Would Recommend`),
+                ~ as.numeric(as.character(.x))))
 
-staff_rating <- staff_rating[, -c(13, 17, 21, 22, 26, 27)]
-
-write.csv(staff_rating, "staff_rating.csv") 
-
+write.csv(staff_rating, "staff_rating.csv", row.names = FALSE)

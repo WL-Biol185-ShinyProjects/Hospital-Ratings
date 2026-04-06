@@ -200,7 +200,7 @@ navbarPage("Hospital Ratings",
                                                               inline = TRUE))
                                ),
                                hr(),
-                               fluidRow(column(12, plotOutput("staff_chart", height = "400px"))),
+                               fluidRow(column(12, plotOutput("staff_chart"))),
                                hr(),
                                fluidRow(column(12, tableOutput("staff_table")))
                       ),
