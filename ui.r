@@ -117,7 +117,7 @@ navbarPage("Hospital Ratings",
                                         div(style = "background:#fff; border:1px solid #b3d1f7; border-radius:12px; 
                        padding:25px; margin:10px; text-align:center;
                        box-shadow: 2px 2px 8px rgba(0,0,0,0.08);",
-                                            tags$img(src = "person2.png", height = "150px", width = "150px",
+                                            tags$img(src = "jojo.jpg", height = "150px", width = "150px",
                                                      style = "border-radius: 50%; object-fit: cover; 
                               border: 3px solid #8ab4f8; margin-bottom: 15px;"),
                                             h4(style = "color: #1a3a5c; margin: 10px 0 5px 0;", "Joanne Lee"),
