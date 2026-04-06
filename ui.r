@@ -20,7 +20,13 @@ readmission_clean <- readmission %>%
     `Number of Readmissions` = as.numeric(`Number of Readmissions`),
     `Number of Discharges`   = as.numeric(`Number of Discharges`),
     `Predicted Readmission Rate` = as.numeric(`Predicted Readmission Rate`)
+  ) %>%
+  filter(
+    !is.na(`Number of Readmissions`),
+    !is.na(`Number of Discharges`),
+    !is.na(`Predicted Readmission Rate`)
   )
+
 
 df_combined <- readmission_clean %>%
   group_by(`Facility Name`, State) %>%
@@ -399,10 +405,14 @@ navbarPage("Hospital Ratings",
                  column(6, uiOutput("readmission_kpi_cards"))
                  ),
                         hr(),
-                        uiOutput("readmission_scorecard"),
-                        hr(),
-                        h4("Full Data Table", style = "color:#555;"),
-                        DT::dataTableOutput("readmission_table")
+               tabsetPanel(
+                 tabPanel("Scorecard", 
+                          br(),
+                          uiOutput("readmission_scorecard")),
+                 tabPanel("Full Data Table", 
+                          br(),
+                          DT::dataTableOutput("readmission_table"))
+               )
       ) #end readmission
                      
                     ) #end tabset

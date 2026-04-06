@@ -46,6 +46,11 @@ readmission_clean <- readmission %>%
     `Number of Readmissions` = as.numeric(`Number of Readmissions`),
     `Number of Discharges`   = as.numeric(`Number of Discharges`),
     `Predicted Readmission Rate` = as.numeric(`Predicted Readmission Rate`)
+  ) %>%
+  filter(
+    !is.na(`Number of Readmissions`),
+    !is.na(`Number of Discharges`),
+    !is.na(`Predicted Readmission Rate`)
   )
 
 df_combined <- readmission_clean %>%
@@ -57,6 +62,7 @@ df_combined <- readmission_clean %>%
     .groups = "drop"
   ) %>%
   ungroup()
+names(df_combined)
 
 function(input, output, session) {
   
@@ -406,7 +412,7 @@ function(input, output, session) {
     if (!is.null(input$search_readmission) && input$search_readmission != "")
       df <- df %>% filter(grepl(input$search_readmission, `Facility Name`, ignore.case = TRUE))
     
-    df <- df %>% 
+    df <- df %>%
     mutate(
       Risk_Tier = case_when(
         `Avg Predicted Readmission Rate` >= 20 ~ "High Risk",
