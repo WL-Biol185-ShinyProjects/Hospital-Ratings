@@ -243,38 +243,45 @@ function(input, output, session) {
     data
   })
   
-  measure_labels <- c(
+  measure_map <- c(
+    "staff"         = "Staff Care",
+    "communication" = "Communication",
+    "rating"        = "High Rating",
+    "recommend"     = "Would Recommend"
+  )
+  
+  label_map <- c(
     "Staff Care"      = "Staff Care Quality",
     "Communication"   = "Communication",
     "High Rating"     = "Facility Rating",
     "Would Recommend" = "Recommendation"
   )
   
-  pos_cols <- c("Staff Care", "Communication", "High Rating", "Would Recommend")
-  
-  output$staff_chart <- renderTable({
+  active_cols_r <- reactive({
     req(input$measure)
-    
-    active_cols <- pos_cols[
-      c("Staff Care", "Communication", "High Rating", "Would Recommend") %in% pos_cols &
-        c("staff", "communication", "rating", "recommend") %in% input$measure
-    ]
-    req(length(active_cols) > 0)
-
+    cols <- unname(measure_map[input$measure[input$measure %in% names(measure_map)]])
+    cols <- cols[cols %in% names(staff_filtered())]
+    validate(need(length(cols) > 0, "No matching columns found in data."))
+    cols
+  }) 
+  
+  
+  output$staff_chart <- renderUI({
+    active_cols <- active_cols_r()
     
     data <- staff_filtered() %>%
       select(`Facility Name`, all_of(active_cols)) %>%
       summarise(across(all_of(active_cols), ~ mean(.x, na.rm = TRUE))) %>%
       pivot_longer(everything(), names_to = "Measure", values_to = "Score") %>%
       mutate(
-        Measure = recode(Measure, !!!measure_labels),
+        Measure = label_map[Measure],        # direct lookup, no recode/!!!
         Score   = round(Score, 1),
         color = case_when(
           Score >= 80 ~ "#2ecc71",
           Score >= 65 ~ "#f1c40f",
           Score >= 50 ~ "#e67e22",
           TRUE        ~ "#e74c3c"
-        ), 
+        ),
         icon = case_when(
           Score >= 80 ~ "🟢",
           Score >= 65 ~ "🟡",
@@ -288,6 +295,8 @@ function(input, output, session) {
           TRUE        ~ "Needs Improvement"
         )
       )
+    
+  
     rows <- lapply(1:nrow(data), function(i) {
       div(style = "margin-bottom:18px;",
           # Measure label and score on same line
@@ -309,24 +318,38 @@ function(input, output, session) {
           )
       )
     })
+    rows <- lapply(1:nrow(data), function(i) {
+      div(style = "margin-bottom:18px;",
+          div(style = "display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;",
+              div(style = "font-size:14px; font-weight:bold; color:#333;",
+                  paste0(data$icon[i], "  ", data$Measure[i])),
+              div(style = paste0("font-size:14px; font-weight:bold; color:", data$color[i], ";"),
+                  paste0(data$Score[i], "%  ", data$label[i]))
+          ),
+          div(style = "background:#f0f0f0; border-radius:50px; height:22px; width:100%; overflow:hidden;",
+              div(style = paste0(
+                "background:", data$color[i], ";",
+                "width:", data$Score[i], "%;",
+                "height:100%; border-radius:50px;",
+                "transition: width 0.6s ease;"
+              ))
+          )
+      )
+    })
     
     div(style = "background:#fff; border-radius:10px; padding:24px;
-               box-shadow:1px 2px 6px rgba(0,0,0,0.08); margin:10px 0;",
+                 box-shadow:1px 2px 6px rgba(0,0,0,0.08); margin:10px 0;",
         div(style = "font-size:16px; font-weight:bold; color:#333; margin-bottom:6px;",
             "Patient Experience Scores"),
         div(style = "font-size:12px; color:#888; margin-bottom:20px;",
             "Average positive response rate across filtered hospitals"),
         div(rows)
     )
-  
   })
   
+  # TABLE
   output$staff_table <- renderTable({
-    req(input$measure)
-    active_cols <- pos_cols[
-      c("Staff Care", "Communication", "High Rating", "Would Recommend") %in% pos_cols &
-        c("staff", "communication", "rating", "recommend") %in% input$measure
-    ]
+    active_cols <- active_cols_r()
     
     staff_filtered() %>%
       select(`Facility Name`, State, all_of(active_cols))
