@@ -68,17 +68,35 @@ df_combined <- readmission_clean %>%
 names(df_combined)
 
 #stars
-make_stars <- function(n) {                                        
-  if (is.na(n)) return(NA_character_)                               
-  paste0(strrep("★", n), strrep("☆", 5 - n))                       
-}                                                                  
+make_stars <- function(n) {
+  n <- suppressWarnings(as.numeric(n))
+  if (is.na(n)) return(NA_character_)
+  paste0(strrep("★", n), strrep("☆", 5 - n))
+}                      
 hospitalgen <- hospitalgen %>%                                       
   mutate(                                                            
-    overall_star_display = map_chr(overall_star_rating, make_stars)  
+    overall_star_display = map_chr(`Hospital overall rating`, make_stars)  
   ) 
 
 #server function
 function(input, output, session) {
+
+  # --- STAR RATINGS FILTER ---
+  filtered_data <- reactive({
+    hospitalgen %>%
+      filter(
+        (input$state == "All" | State == input$state),
+        (input$type == "All" | `Hospital Type` == input$type),
+        (input$ownership == "All" | `Hospital Ownership` == input$ownership)
+      )
+  })
+  
+  output$cards_table <- renderTable({
+    filtered_data() %>%
+      select(
+        `Facility Name`, `City/Town`, State, `Hospital overall rating`, overall_star_display
+      )
+  })
   
   # Populate HVBP state dropdown on startup
   observe({
