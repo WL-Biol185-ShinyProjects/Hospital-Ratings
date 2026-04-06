@@ -6,7 +6,9 @@ library(dplyr)
 library(plotly)
 library(shinyWidgets)
 library(bslib) 
+library(purrr)
 
+hospitalgen <- read.csv("hospital_general_info.csv", check.names = FALSE)
 directory <- read.csv("directory.csv", check.names = FALSE)
 staff_rating <- read.csv("staff_rating.csv", row.names = 1, check.names = FALSE)
 birthing <- read.csv("Birthing_Friendly_Hospitals_Geocoded.csv")
@@ -15,6 +17,7 @@ hai_cleaned <- read.csv("hai_cleaned.csv")
 SurgCenters <- read.csv("SurgCenters.csv", check.names = FALSE)
 readmission <- read.csv("FY_2025_Hospital_Readmissions_Reduction_Program_Hospital.csv", check.names = FALSE)  
 hvbp_raw <- read.csv("hvbp_person_and_community_engagement.csv", check.names = FALSE)
+hospital
 
 hvbp_clean <- hvbp_raw %>%
   select(
@@ -64,6 +67,17 @@ df_combined <- readmission_clean %>%
   ungroup()
 names(df_combined)
 
+#stars
+make_stars <- function(n) {                                        
+  if (is.na(n)) return(NA_character_)                               
+  paste0(strrep("★", n), strrep("☆", 5 - n))                       
+}                                                                  
+hospital_df <- hospitalgen %>%                                       
+  mutate(                                                            
+    overall_star_display = map_chr(overall_star_rating, make_stars)  
+  ) 
+
+#server function
 function(input, output, session) {
   
   # Populate HVBP state dropdown on startup
