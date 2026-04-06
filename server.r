@@ -276,107 +276,45 @@ function(input, output, session) {
   })
   
   measure_map <- c(
-    "staff"         = "Staff Care",
-    "communication" = "Communication",
-    "rating"        = "High Rating",
-    "recommend"     = "Would Recommend"
-  )
-  
-  label_map <- c(
-    "Staff Care"      = "Staff Care Quality",
-    "Communication"   = "Communication",
-    "High Rating"     = "Facility Rating",
-    "Would Recommend" = "Recommendation"
+    staff = "Patients who reported that staff definitely gave care in a professional way and the facility was clean",
+    communication = "Patients who reported that staff definitely communicated about what to expect during and after the procedure",
+    rating = "Patients who gave the facility a rating of 9 or 10 on a scale from 0 (lowest) to 10 (highest)",
+    recommend = "Patients who reported YES they would DEFINITELY recommend the facility to family or friends"
   )
   
   active_cols_r <- reactive({
     req(input$measure)
-    cols <- unname(measure_map[input$measure[input$measure %in% names(measure_map)]])
+    
+    cols <- unname(measure_map[trimws(input$measure)])
+    cols <- cols[!is.na(cols)]
+    cols <- trimws(cols)
     cols <- cols[cols %in% names(staff_filtered())]
-    validate(need(length(cols) > 0, "No matching columns found in data."))
+    
+    validate(need(length(cols) > 0, paste(
+      "No matching columns found in data.",
+      "Selected:", paste(input$measure, collapse = ", "),
+      "Available:", paste(names(staff_filtered()), collapse = ", ")
+    )))
+    
     cols
-  }) 
+  })
   
-  
-  output$staff_chart <- renderUI({
+  output$staff_chart <- renderPlot({
     active_cols <- active_cols_r()
     
     data <- staff_filtered() %>%
-      select(`Facility Name`, all_of(active_cols)) %>%
       summarise(across(all_of(active_cols), ~ mean(.x, na.rm = TRUE))) %>%
       pivot_longer(everything(), names_to = "Measure", values_to = "Score") %>%
       mutate(
-        Measure = label_map[Measure],        # direct lookup, no recode/!!!
+        Measure = label_map[Measure],        
         Score   = round(Score, 1),
-        color = case_when(
-          Score >= 80 ~ "#2ecc71",
-          Score >= 65 ~ "#f1c40f",
-          Score >= 50 ~ "#e67e22",
-          TRUE        ~ "#e74c3c"
-        ),
-        icon = case_when(
-          Score >= 80 ~ "🟢",
-          Score >= 65 ~ "🟡",
-          Score >= 50 ~ "🟠",
-          TRUE        ~ "🔴"
-        ),
-        label = case_when(
-          Score >= 80 ~ "Excellent",
-          Score >= 65 ~ "Good",
-          Score >= 50 ~ "Fair",
-          TRUE        ~ "Needs Improvement"
-        )
       )
-    
-  
-    rows <- lapply(1:nrow(data), function(i) {
-      div(style = "margin-bottom:18px;",
-          # Measure label and score on same line
-          div(style = "display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;",
-              div(style = "font-size:14px; font-weight:bold; color:#333;",
-                  paste0(data$icon[i], "  ", data$Measure[i])),
-              div(style = paste0("font-size:14px; font-weight:bold; color:", data$color[i], ";"),
-                  paste0(data$Score[i], "%  ", data$label[i]))
-          ),
-          # Progress bar track
-          div(style = paste0(
-            "background:#f0f0f0; border-radius:50px; height:22px; width:100%; overflow:hidden;"),
-            # Filled portion
-            div(style = paste0(
-              "background:", data$color[i], ";",
-              "width:", data$Score[i], "%;",
-              "height:100%; border-radius:50px;",
-              "transition: width 0.6s ease;"))
-          )
-      )
-    })
-    rows <- lapply(1:nrow(data), function(i) {
-      div(style = "margin-bottom:18px;",
-          div(style = "display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;",
-              div(style = "font-size:14px; font-weight:bold; color:#333;",
-                  paste0(data$icon[i], "  ", data$Measure[i])),
-              div(style = paste0("font-size:14px; font-weight:bold; color:", data$color[i], ";"),
-                  paste0(data$Score[i], "%  ", data$label[i]))
-          ),
-          div(style = "background:#f0f0f0; border-radius:50px; height:22px; width:100%; overflow:hidden;",
-              div(style = paste0(
-                "background:", data$color[i], ";",
-                "width:", data$Score[i], "%;",
-                "height:100%; border-radius:50px;",
-                "transition: width 0.6s ease;"
-              ))
-          )
-      )
-    })
-    
-    div(style = "background:#fff; border-radius:10px; padding:24px;
-                 box-shadow:1px 2px 6px rgba(0,0,0,0.08); margin:10px 0;",
-        div(style = "font-size:16px; font-weight:bold; color:#333; margin-bottom:6px;",
-            "Patient Experience Scores"),
-        div(style = "font-size:12px; color:#888; margin-bottom:20px;",
-            "Average positive response rate across filtered hospitals"),
-        div(rows)
-    )
+        ggplot(data, aes(x = reorder(Measure, Score), y = Score, fill = Score)) +
+          geom_col(width = 0.7) +
+          coord_flip() +
+          scale_y_continuous(limits = c(0, 100)) +
+          labs(x = NULL, y = "Positive response rate") +
+          theme_minimal()
   })
   
   # TABLE
