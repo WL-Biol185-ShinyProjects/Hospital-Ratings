@@ -8,7 +8,7 @@ library(shinyWidgets)
 library(bslib) 
 library(purrr)
 
-hospitalgen <- read.csv("hospital_general_info.csv", check.names = FALSE)
+hospitalgen <- read.csv("hosp.general.info.csv", check.names = FALSE)
 directory <- read.csv("directory.csv", check.names = FALSE)
 staff_rating <- read.csv("staff_rating.csv", row.names = 1, check.names = FALSE)
 birthing <- read.csv("Birthing_Friendly_Hospitals_Geocoded.csv")
@@ -72,7 +72,7 @@ make_stars <- function(n) {
   if (is.na(n)) return(NA_character_)                               
   paste0(strrep("★", n), strrep("☆", 5 - n))                       
 }                                                                  
-hospital_df <- hospitalgen %>%                                       
+hospitalgen <- hospitalgen %>%                                       
   mutate(                                                            
     overall_star_display = map_chr(overall_star_rating, make_stars)  
   ) 
