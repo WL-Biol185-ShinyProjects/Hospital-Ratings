@@ -10,7 +10,6 @@ library(purrr)
 
 hospitalgen <- read.csv("hosp.general.info.csv", check.names = FALSE)
 directory <- read.csv("directory.csv", check.names = FALSE)
-staff_rating <- read.csv("staff_rating.csv", row.names = 1, check.names = FALSE)
 birthing <- read.csv("Birthing_Friendly_Hospitals_Geocoded.csv")
 VA_IPF_geocoded <- read.csv("VA_IPF_geocoded.csv")
 hai_cleaned <- read.csv("hai_cleaned.csv")
@@ -18,6 +17,20 @@ SurgCenters <- read.csv("SurgCenters.csv", check.names = FALSE)
 readmission <- read.csv("FY_2025_Hospital_Readmissions_Reduction_Program_Hospital.csv", check.names = FALSE)  
 hvbp_raw <- read.csv("hvbp_person_and_community_engagement.csv", check.names = FALSE)
 
+staff_rating <- read_csv("ASCQR_OAS_CAHPS_BY_ASC.csv", show_col_types = FALSE) %>%
+  select(-1) %>%
+   rename(
+    `Facility Name`  = `Facility Name`,
+    `State`          = State,
+    `Staff Care`     = `Patients who reported that staff definitely gave care in a professional way and the facility was clean`,
+    `Communication`  = `Patients who reported that staff definitely communicated about what to expect during and after the procedure`,
+    `High Rating`    = `Patients who gave the facility a rating of 9 or 10 on a scale from 0 (lowest) to 10 (highest)`,
+    `Would Recommend`= `Patients who reported YES they would DEFINITELY recommend the facility to family or friends`
+  ) %>%
+  select(`Facility Name`, State, `Staff Care`, `Communication`, 
+         `High Rating`, `Would Recommend`) %>%
+  mutate(across(c(`Staff Care`, `Communication`, `High Rating`, `Would Recommend`),
+                ~ as.numeric(as.character(.x))))
 
 hvbp_clean <- hvbp_raw %>%
   select(
@@ -372,115 +385,108 @@ function(input, output, session) {
     DT::datatable(cars)
   })
   
-# STAFF RATINGS 
+# --------STAFF RATINGS -------------
 
+  measure_map <- c(
+    staff         = "Staff Care",
+    communication = "Communication",
+    rating        = "High Rating",
+    recommend     = "Would Recommend"
+  )
+  
+  short_labels <- c(
+    "Staff Care"      = "Staff Care Quality",
+    "Communication"   = "Communication",
+    "High Rating"     = "Facility Rating",
+    "Would Recommend" = "Would Recommend"
+  )
+  
   observeEvent(input$state_staff, {
-    if (input$state_staff == "All") {
-      facilities <- c("All", sort(unique(staff_rating$`Facility Name`)))
+    if (is.null(input$state_staff) || length(input$state_staff) == 0) {
+      choices <- sort(unique(staff_rating$`Facility Name`))
     } else {
-      facilities <- c("All", sort(unique(staff_rating$`Facility Name`[staff_rating$State == input$state_staff])))
+      choices <- sort(unique(
+        staff_rating$`Facility Name`[staff_rating$State %in% input$state_staff]
+      ))
     }
-    updateSelectInput(session, "facility_staff", choices = facilities, selected = "All")
+    updateSelectizeInput(session, "facility_staff", choices = choices, selected = NULL)
   })
   
+  
   staff_filtered <- reactive({
-    data <- staff_rating
-    if (input$state_staff != "All") data <- data %>% filter(State == input$state_staff)
+    data <- staff_rating 
+    
+    if (!is.null(input$state_staff) && length(input$state_staff) > 0)
+      data <- data %>% filter(State %in% input$state_staff)
+    if (!is.null(input$facility_staff) && length(input$facility_staff) > 0)
+      
+      data <- data %>% filter(`Facility Name` == input$facility_staff)
+    # Drop rows where any of the four measure columns are NA
+    data <- data %>%
+      filter(
+        !is.na(`Staff Care`),
+        !is.na(`Communication`),
+        !is.na(`High Rating`),
+        !is.na(`Would Recommend`)
+      )
     data
   })
   
-  measure_map <- c(
-    staff = "Patients who reported that staff definitely gave care in a professional way and the facility was clean",
-    communication = "Patients who reported that staff definitely communicated about what to expect during and after the procedure",
-    rating = "Patients who gave the facility a rating of 9 or 10 on a scale from 0 (lowest) to 10 (highest)",
-    recommend = "Patients who reported YES they would DEFINITELY recommend the facility to family or friends"
-  )
-  
-  active_cols_r <- reactive({
-    req(input$measure)
+  output$staff_chart <- renderPlot({
+    data <- staff_filtered()
+    req(nrow(data) > 0)
     
-    cols <- unname(measure_map[trimws(input$measure)])
-    cols <- cols[!is.na(cols)]
-    cols <- trimws(cols)
-    cols <- cols[cols %in% names(staff_filtered())]
+    if (!is.null(input$facility_staff) && length(input$facility_staff) > 0) {
+      group_var <- "Facility Name"
+    } else {
+      group_var <- "State"
+    }
     
-    validate(need(length(cols) > 0, paste(
-      "No matching columns found in data.",
-      "Selected:", paste(input$measure, collapse = ", "),
-      "Available:", paste(names(staff_filtered()), collapse = ", ")
-    )))
-    
-    cols
-  })
-  
-output$staff_chart <- renderUI({
-  active_cols <- active_cols_r()
-
-  data <- staff_filtered() %>%
-    summarise(across(all_of(active_cols), ~ mean(as.numeric(.x), na.rm = TRUE))) %>%
-    pivot_longer(cols = everything(), names_to = "Measure", values_to = "Score") %>%
-    mutate(
-      Measure = unname(label_map[as.character(Measure)]),
-      Score = round(as.numeric(Score), 1),
-      color = case_when(
-        Score >= 80 ~ "#2ecc71",
-        Score >= 65 ~ "#f1c40f",
-        Score >= 50 ~ "#e67e22",
-        TRUE ~ "#e74c3c"
-      ),
-      icon = case_when(
-        Score >= 80 ~ "🟢",
-        Score >= 65 ~ "🟡",
-        Score >= 50 ~ "🟠",
-        TRUE ~ "🔴"
-      ),
-      label = case_when(
-        Score >= 80 ~ "Excellent",
-        Score >= 65 ~ "Good",
-        Score >= 50 ~ "Fair",
-        !is.na(Score) ~ "Needs Improvement",
-        TRUE ~ "No Data"
+    plot_data <- data %>%
+      group_by(.data[[group_var]]) %>%
+      summarise(across(all_of(unname(measure_map)), ~ mean(as.numeric(.x), na.rm = TRUE)), .groups = "drop") %>%
+      pivot_longer(-all_of(group_var), names_to = "Measure", values_to = "Score") %>%
+      rename(Group = all_of(group_var)) %>%
+      mutate(
+        Measure = unname(short_labels[Measure]),
+        Score   = round(Score, 1)
       )
-    ) %>%
-    filter(!is.na(Score), !is.na(Measure))
-  if (nrow(data) == 0) {
-    return(div(style = "padding:20px; color:#666;", "No patient experience data available for the current selection."))
-  }
-  rows <- lapply(seq_len(nrow(data)), function(i) {
-    div(style = "margin-bottom:18px;",
-        div(style = "display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;",
-            div(style = "font-size:14px; font-weight:bold; color:#333;",
-                paste0(data$icon[i], "  ", data$Measure[i])),
-            div(style = paste0("font-size:14px; font-weight:bold; color:", data$color[i], ";"),
-                paste0(data$Score[i], "%  ", data$label[i]))
-        ),
-        div(style = "background:#f0f0f0; border-radius:50px; height:22px; width:100%; overflow:hidden;",
-            div(style = paste0(
-              "background:", data$color[i], ";",
-              "width:", data$Score[i], "%;",
-              "height:100%; border-radius:50px;"
-            ))
-        )
-    )
+    
+    ggplot(plot_data, aes(x = Score, y = reorder(Measure, Score), fill = group)) +
+      geom_col(width = 0.55) +
+      geom_text(aes(label = paste0(Score, "%")), hjust = -0.2, size = 5, fontface = "bold") +
+      scale_fill_identity() +
+      scale_x_continuous(limits = c(0, 115), labels = function(x) paste0(x, "%")) +
+      labs(x = NULL, y = NULL, fill = group_var,
+           title = "Patient Experience Scores",
+           subtitle = "% of surveyed patients who responded positively to each measure") +
+      theme_minimal(base_size = 14) +
+      theme(
+        panel.grid.major.y = element_blank(),
+        panel.grid.minor   = element_blank(),
+        axis.text.y        = element_text(size = 13) ,
+        legend.position    = "bottom"
+      )
+  }, height = function() {
+    n_groups <- length(unique(staff_filtered()$State))
+    max(400, n_groups * 80)
+      
   })
-
-  div(style = "background:#fff; border-radius:10px; padding:24px; box-shadow:1px 2px 6px rgba(0,0,0,0.08); margin:10px 0;",
-      div(style = "font-size:16px; font-weight:bold; color:#333; margin-bottom:6px;",
-          "Patient Experience Scores"),
-      div(style = "font-size:12px; color:#888; margin-bottom:20px;",
-          "Average positive response rate across filtered hospitals"),
-      div(rows)
-  )
-})
   
-  # TABLE
-output$staff_table <- renderTable({
-  active_cols <- active_cols_r()
-  
-  staff_filtered() %>%
-    select(`Facility Name`, State, any_of(active_cols)) %>%
-    filter(if_all(any_of(active_cols), ~ !is.na(.x)))
-})
+  output$staff_table <- renderTable({
+    data <- staff_filtered()
+    
+    if (!is.null(input$facility_staff) && length(input$facility_staff) > 0) {
+      group_var <- "Facility Name"
+    } else {
+      group_var <- "State"
+    }
+    
+    data %>%
+      group_by(.data[[group_var]]) %>%
+      summarise(across(all_of(unname(measure_map)), ~ round(mean(as.numeric(.x), na.rm = TRUE), 1)), .groups = "drop") %>%
+      rename(!!!setNames(unname(measure_map), unname(short_labels[unname(measure_map)])))
+  })
   
   # RISK FACTORS — FIND MY HOSPITAL
   output$facility_readmission_dropdown <- renderUI({
