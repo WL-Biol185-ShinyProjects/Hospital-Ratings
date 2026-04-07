@@ -42,11 +42,11 @@ staff_rating <- read_csv("ASCQR_OAS_CAHPS_BY_ASC.csv") %>%
     `Staff Care`     = `Patients who reported that staff definitely gave care in a professional way and the facility was clean`,
     `Communication`  = `Patients who reported that staff definitely communicated about what to expect during and after the procedure`,
     `High Rating`    = `Patients who gave the facility a rating of 9 or 10 on a scale from 0 (lowest) to 10 (highest)`,
-    `Would Recommend`= `Patients who reported YES they would DEFINITELY recommend the facility to family or friends`
+    `Would Recommend to Others`= `Patients who reported YES they would DEFINITELY recommend the facility to family or friends`
   ) %>%
   select(`Facility Name`, State, `Staff Care`, `Communication`,
-         `High Rating`, `Would Recommend`) %>%
-  mutate(across(c(`Staff Care`, `Communication`, `High Rating`, `Would Recommend`),
+         `High Rating`, `Would Recommend to Others`) %>%
+  mutate(across(c(`Staff Care`, `Communication`, `High Rating`, `Would Recommend to Others`),
                 ~ suppressWarnings(as.numeric(as.character(.x)))))
 
 navbarPage("Hospital Ratings",

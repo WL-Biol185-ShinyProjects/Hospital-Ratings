@@ -25,11 +25,11 @@ staff_rating <- read_csv("ASCQR_OAS_CAHPS_BY_ASC.csv", show_col_types = FALSE) %
     `Staff Care`     = `Patients who reported that staff definitely gave care in a professional way and the facility was clean`,
     `Communication`  = `Patients who reported that staff definitely communicated about what to expect during and after the procedure`,
     `High Rating`    = `Patients who gave the facility a rating of 9 or 10 on a scale from 0 (lowest) to 10 (highest)`,
-    `Would Recommend`= `Patients who reported YES they would DEFINITELY recommend the facility to family or friends`
+    `Would Recommend to Others`= `Patients who reported YES they would DEFINITELY recommend the facility to family or friends`
   ) %>%
   select(`Facility Name`, State, `Staff Care`, `Communication`, 
-         `High Rating`, `Would Recommend`) %>%
-  mutate(across(c(`Staff Care`, `Communication`, `High Rating`, `Would Recommend`),
+         `High Rating`, `Would Recommend to Others`) %>%
+  mutate(across(c(`Staff Care`, `Communication`, `High Rating`, `Would Recommend to Others`),
                 ~ as.numeric(as.character(.x))))
 
 hvbp_clean <- hvbp_raw %>%
@@ -379,14 +379,14 @@ function(input, output, session) {
     staff         = "Staff Care",
     communication = "Communication",
     rating        = "High Rating",
-    recommend     = "Would Recommend"
+    recommend     = "Would Recommend to Others"
   )
   
   short_labels <- c(
     "Staff Care"      = "Staff Care Quality",
     "Communication"   = "Communication",
     "High Rating"     = "Facility Rating",
-    "Would Recommend" = "Would Recommend"
+    "Would Recommend to Others" = "Would Recommend to Others"
   )
   
   observeEvent(input$state_staff, {
@@ -416,7 +416,7 @@ function(input, output, session) {
         !is.na(`Staff Care`),
         !is.na(`Communication`),
         !is.na(`High Rating`),
-        !is.na(`Would Recommend`)
+        !is.na(`Would Recommend to Others`)
       )
     data
   })
@@ -496,7 +496,7 @@ function(input, output, session) {
         `Staff Care Quality` = round(mean(as.numeric(`Staff Care`), na.rm = TRUE), 1),
         `Communication` = round(mean(as.numeric(`Communication`), na.rm = TRUE), 1),
         `Facility Rating` = round(mean(as.numeric(`High Rating`), na.rm = TRUE), 1),
-        `Would Recommend` = round(mean(as.numeric(`Would Recommend`), na.rm = TRUE), 1),
+        `Would Recommend to Others` = round(mean(as.numeric(`Would Recommend to Others`), na.rm = TRUE), 1),
         .groups = "drop"
       )
   })
