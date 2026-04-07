@@ -11,6 +11,10 @@ by CMS, aggregating performance across multiple care domains. Sourced from Kaggl
 **VA Hospital Data** — Performance and quality metrics specific to Veterans Affairs medical
 facilities, drawn from CMS provider-level hospital data.
 
+**Birthing-Friendly Hospitals** — Hospitals earning this CMS designation have reported progress
+on the Maternal Morbidity Structural Measure, confirming participation in a perinatal quality
+improvement collaborative and implementation of evidence-based maternal health interventions.
+
 **Readmissions** — 30-day unplanned readmission rates by condition and hospital, indicating how
 often patients return after discharge. From the
 [CMS Timely and Effective Care dataset](https://data.cms.gov/provider-data/dataset/yv7e-xc69).
