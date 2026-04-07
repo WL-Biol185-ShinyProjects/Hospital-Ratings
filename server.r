@@ -373,18 +373,6 @@ function(input, output, session) {
     )
   })
   
-  output$plot <- renderPlot({
-    plot(cars, type=input$plotType)
-  })
- 
-  output$summary <- renderPrint({
-    summary(cars)
-  })
-  
-  output$table <- DT::renderDataTable({
-    DT::datatable(cars)
-  })
-  
 # --------STAFF RATINGS -------------
 
   measure_map <- c(
@@ -420,7 +408,8 @@ function(input, output, session) {
       data <- data %>% filter(State %in% input$state_staff)
     if (!is.null(input$facility_staff) && length(input$facility_staff) > 0)
       
-      data <- data %>% filter(`Facility Name` == input$facility_staff)
+      data <- data %>% filter(`Facility Name` %in% input$facility_staff)
+    
     # Drop rows where any of the four measure columns are NA
     data <- data %>%
       filter(
@@ -433,6 +422,65 @@ function(input, output, session) {
   })
   
   output$staff_chart <- renderPlot({
+    req(input$apply_staff > 0)
+    data <- staff_filtered()
+    req(nrow(data) > 0)
+    
+    group_var <- if (!is.null(input$facility_staff) && length(input$facility_staff) > 0) {
+      "Facility Name"
+    } else {
+      "State"
+    }
+    
+    plot_data <- data %>%
+      group_by(.data[[group_var]]) %>%
+      summarise(across(all_of(unname(measure_map)), ~ mean(as.numeric(.x), na.rm = TRUE)), .groups = "drop") %>%
+      pivot_longer(-all_of(group_var), names_to = "Measure", values_to = "Score") %>%
+      rename(Group = all_of(group_var)) %>%
+      mutate(
+        Measure = factor(unname(short_labels[Measure]), levels = unname(short_labels)),
+        Score = round(Score, 1)
+      )
+    
+    dodge <- position_dodge(width = 0.8)
+    
+    ggplot(plot_data, aes(x = Measure, y = Score, fill = Group, group = Group)) +
+      geom_col(position = dodge, width = 0.7) +
+      geom_text(
+        aes(label = paste0(Score, "%")),
+        position = dodge,
+        hjust = -0.15,
+        size = 4
+      ) +
+      coord_flip(clip = "off") +
+      scale_y_continuous(
+        limits = c(0, 110),
+        labels = function(x) paste0(x, "%"),
+        expand = expansion(mult = c(0, 0.08))
+      ) +
+      labs(
+        x = NULL, y = NULL, fill = group_var,
+        title = "Patient Experience Scores",
+        subtitle = "% of surveyed patients who responded positively to each measure"
+      ) +
+      theme_minimal(base_size = 14) +
+      theme(
+        panel.grid.major.y = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.text.y = element_text(size = 12),
+        legend.position = "bottom"
+      )
+  }, height = function() {
+    data <- staff_filtered()
+    n_groups <- if (!is.null(input$facility_staff) && length(input$facility_staff) > 0) {
+      length(unique(data$`Facility Name`))
+    } else {
+      length(unique(data$State))
+    }
+    max(400, n_groups * 45)
+  })
+  output$staff_table <- renderTable({
+    req(input$apply_staff > 0)
     data <- staff_filtered()
     req(nrow(data) > 0)
     
@@ -442,50 +490,15 @@ function(input, output, session) {
       group_var <- "State"
     }
     
-    plot_data <- data %>%
-      group_by(.data[[group_var]]) %>%
-      summarise(across(all_of(unname(measure_map)), ~ mean(as.numeric(.x), na.rm = TRUE)), .groups = "drop") %>%
-      pivot_longer(-all_of(group_var), names_to = "Measure", values_to = "Score") %>%
-      rename(Group = all_of(group_var)) %>%
-      mutate(
-        Measure = unname(short_labels[Measure]),
-        Score   = round(Score, 1)
-      )
-    
-    ggplot(plot_data, aes(x = Score, y = reorder(Measure, Score), fill = group)) +
-      geom_col(width = 0.55) +
-      geom_text(aes(label = paste0(Score, "%")), hjust = -0.2, size = 5, fontface = "bold") +
-      scale_fill_identity() +
-      scale_x_continuous(limits = c(0, 115), labels = function(x) paste0(x, "%")) +
-      labs(x = NULL, y = NULL, fill = group_var,
-           title = "Patient Experience Scores",
-           subtitle = "% of surveyed patients who responded positively to each measure") +
-      theme_minimal(base_size = 14) +
-      theme(
-        panel.grid.major.y = element_blank(),
-        panel.grid.minor   = element_blank(),
-        axis.text.y        = element_text(size = 13) ,
-        legend.position    = "bottom"
-      )
-  }, height = function() {
-    n_groups <- length(unique(staff_filtered()$State))
-    max(400, n_groups * 80)
-      
-  })
-  
-  output$staff_table <- renderTable({
-    data <- staff_filtered()
-    
-    if (!is.null(input$facility_staff) && length(input$facility_staff) > 0) {
-      group_var <- "Facility Name"
-    } else {
-      group_var <- "State"
-    }
-    
     data %>%
       group_by(.data[[group_var]]) %>%
-      summarise(across(all_of(unname(measure_map)), ~ round(mean(as.numeric(.x), na.rm = TRUE), 1)), .groups = "drop") %>%
-      rename(!!!setNames(unname(measure_map), unname(short_labels[unname(measure_map)])))
+      summarise(
+        `Staff Care Quality` = round(mean(as.numeric(`Staff Care`), na.rm = TRUE), 1),
+        `Communication` = round(mean(as.numeric(`Communication`), na.rm = TRUE), 1),
+        `Facility Rating` = round(mean(as.numeric(`High Rating`), na.rm = TRUE), 1),
+        `Would Recommend` = round(mean(as.numeric(`Would Recommend`), na.rm = TRUE), 1),
+        .groups = "drop"
+      )
   })
   
   # RISK FACTORS — FIND MY HOSPITAL
