@@ -4,6 +4,7 @@ library(dplyr)
 library(shinyWidgets)
 library(DT)
 library(bslib)
+library(tidyverse)
 
 hospitalgen <- read.csv("hosp.general.info.csv", check.names = FALSE)
 directory <- read.csv("directory.csv", check.names = FALSE)
