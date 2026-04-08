@@ -7,7 +7,6 @@ library(bslib)
 
 hospitalgen <- read.csv("hosp.general.info.csv", check.names = FALSE)
 directory <- read.csv("directory.csv", check.names = FALSE)
-staff_rating <- read.csv("staff_rating.csv")
 VA_IPF_geocoded <- read.csv("VA_IPF_geocoded.csv")
 hai_cleaned <- read.csv("hai_cleaned.csv")
 birthing <- read.csv("Birthing_Friendly_Hospitals_Geocoded.csv")
@@ -27,8 +26,6 @@ readmission_clean <- readmission %>%
     !is.na(`Number of Discharges`),
     !is.na(`Predicted Readmission Rate`)
   )
-
-
 df_combined <- readmission_clean %>%
   group_by(`Facility Name`, State) %>%
   summarise(
@@ -37,7 +34,20 @@ df_combined <- readmission_clean %>%
     `Avg Predicted Readmission Rate` = mean(`Predicted Readmission Rate`, na.rm = TRUE)
   ) %>%
   ungroup() 
-
+staff_rating <- read_csv("ASCQR_OAS_CAHPS_BY_ASC.csv") %>%
+  select(-1) %>%
+  rename(
+    `Facility Name`  = `Facility Name`,
+    `State`          = State,
+    `Staff Care`     = `Patients who reported that staff definitely gave care in a professional way and the facility was clean`,
+    `Communication`  = `Patients who reported that staff definitely communicated about what to expect during and after the procedure`,
+    `High Rating`    = `Patients who gave the facility a rating of 9 or 10 on a scale from 0 (lowest) to 10 (highest)`,
+    `Would Recommend to Others`= `Patients who reported YES they would DEFINITELY recommend the facility to family or friends`
+  ) %>%
+  select(`Facility Name`, State, `Staff Care`, `Communication`,
+         `High Rating`, `Would Recommend to Others`) %>%
+  mutate(across(c(`Staff Care`, `Communication`, `High Rating`, `Would Recommend to Others`),
+                ~ suppressWarnings(as.numeric(as.character(.x)))))
 
 navbarPage("Hospital Ratings",
            theme = bslib::bs_theme(bootswatch = "lumen"),
@@ -177,73 +187,78 @@ navbarPage("Hospital Ratings",
 #-----------end directory page-------------------------
 
 #----------STAR RATINGS PAGE-----------------           
-tabPanel("Star Ratings",
-         div(style = "padding: 20px;",
-             # info banner
-             div(
-               style = "background:#e8f0fe; border:1px solid #8ab4f8; border-radius:8px;
-               padding:12px 20px; margin-bottom:15px;",
-               tags$b("ℹ️ About Star Ratings"),
-               tags$p("Overall star ratings are provided by the Centers for Medicare & Medicaid Services (CMS).
-              Ratings range from 1 to 5 stars based on quality measures across multiple categories.",
-                      style = "margin:6px 0 0 0; color:#555; font-size:13px;")
-             ),
-             # filters
-             fluidRow(
-               column(3,
-                      selectInput("sr_state", "State",
-                                  choices = c("All", sort(unique(hospitalgen$State)))),
-                      selectInput("sr_type", "Hospital Type",
-                                  choices = c("All", sort(unique(hospitalgen$`Hospital Type`)))),
-                      selectInput("sr_ownership", "Hospital Ownership",
-                                  choices = c("All", sort(unique(hospitalgen$`Hospital Ownership`)))),
-                      textInput("sr_search", "Search by Name", placeholder = "e.g. Johns Hopkins"),
-                      hr(),
-                      # compare panel
-                      div(
-                        style = "background:#f8f9fa; border-radius:8px; padding:15px;",
-                        h5(style = "color:#1a3a5c;", "⚖️ Compare Hospitals"),
-                        p(style = "color:#888; font-size:12px;", "Select up to 3 hospitals to compare side by side."),
-                        uiOutput("compare_checkboxes"),
-                        actionButton("compare_btn", "Compare Selected",
-                                     style = "background:#1a3a5c; color:white; width:100%; margin-top:10px;"),
-                        actionButton("clear_compare", "Clear",
-                                     style = "width:100%; margin-top:5px;")
+           tabPanel("Star Ratings",
+                    fluidRow(
+                      column(
+                        3,
+                        selectInput("state", "State", choices = c("All", sort(unique(hospitalgen$State)))),
+                        selectInput("type", "Hospital Type", choices = c("All", sort(unique(hospitalgen$`Hospital Type`)))),
+                        selectInput("ownership", "Hospital Ownership", choices = c("All", sort(unique(hospitalgen$`Hospital Ownership`))))
+                      ),
+                      column(
+                        9,
+                        tableOutput("cards_table")
                       )
-               ),
-               column(9,
-                      # compare table (hidden until compare is clicked)
-                      uiOutput("compare_panel"),
-                      hr(),
-                      # cards
-                      uiOutput("hospital_cards")
-               )
-             )
-         )
-),
+                    )
+           ),
            
            tabPanel("Staff & Communication",
                     tabsetPanel(
                       tabPanel("Patient Experience",
                                br(),
                                fluidRow(
-                                 column(3, selectInput("state_staff", "Filter by State:",
-                                                       choices = c("All", sort(unique(staff_rating$State))),
-                                                       selected = "All")),
-                                 column(9, checkboxGroupInput("measure", "Select Measures:",
-                                                              choices = c(
-                                                                "Staff Care Quality" = "staff",
-                                                                "Communication"      = "communication",
-                                                                "Facility Rating"    = "rating",
-                                                                "Recommendation"     = "recommend"
-                                                              ),
-                                                              selected = c("staff", "communication", "rating", "recommend"),
-                                                              inline = TRUE))
+                                 column(
+                                   4,
+                                   selectizeInput(
+                                     "state_staff", "Filter by State:",
+                                     choices = sort(unique(staff_rating$State)),
+                                     selected = NULL,
+                                     multiple = TRUE,
+                                     options = list(placeholder = "All states")
+                                   )
+                                 ),
+                                 column(
+                                   4,
+                                   selectizeInput(
+                                     "facility_staff", "Filter by Facility:",
+                                     choices = NULL,
+                                     selected = NULL,
+                                     multiple = TRUE,
+                                     options = list(placeholder = "All facilities in selected states")
+                                   )
+                                 ),
+                                 column(
+                                   4,
+                                   actionButton("apply_staff", "Apply Filters", class = "btn-primary")
+                                 )
                                ),
                                hr(),
-                               fluidRow(column(12, plotOutput("staff_chart"))),
-                               hr(),
-                               fluidRow(column(12, tableOutput("staff_table")))
+                               tabsetPanel(
+                                 tabPanel(
+                                   "Chart",
+                                   conditionalPanel(
+                                     condition = "input.apply_staff > 0",
+                                     div(style = "padding-bottom: 20px;",
+                                         plotOutput("staff_chart", height = "500px")
+                                     )
+                                   ),
+                                   conditionalPanel(
+                                     condition = "input.apply_staff == 0",
+                                     div(class = "well", "Choose filters and click Apply Filters to load the chart.")
+                                   )
+                                 ),
+                                 tabPanel(
+                                   "Table",
+                                   conditionalPanel(
+                                     condition = "input.apply_staff > 0",
+                                     tableOutput("staff_table")
+                                   )
+                                 )
+                               ),
+                               p(
+                                 style = "color:#888; font-size:12px; margin-top:8px;",
+                                 "⚠️ Scores represent the percentage of surveyed patients who responded positively. When multiple facilities or states are selected, scores are averaged across all surveyed patients in that group. Data sourced from CMS OAS CAHPS Survey (2023–2024)."
+                               )
                       ),
                       
                       tabPanel("Engagement Scores",
@@ -463,8 +478,9 @@ tabPanel("Star Ratings",
                  
        
 navbarMenu("More",
-           tabPanel("Table", DT::dataTableOutput("table")),
-           tabPanel("About")
-  )
+           tabPanel("About",
+                             includeMarkdown("about.md")
+                    )
+)
  ) # end navbarPage
 
