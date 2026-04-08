@@ -87,6 +87,7 @@ function(input, output, session) {
   
   # filtered data
   sr_filtered <- reactive({
+    print("sr_filtered triggered")  
     df <- hospitalgen
     if (input$sr_state != "All") df <- df %>% filter(State == input$sr_state)
     if (input$sr_type != "All")  df <- df %>% filter(`Hospital Type` == input$sr_type)
@@ -99,9 +100,14 @@ function(input, output, session) {
   # render cards
   output$hospital_cards <- renderUI({
     rows <- sr_filtered()
+    print(paste("rows:", nrow(rows)))
     if (nrow(rows) == 0) return(p("No hospitals match your filters."))
     
-    cards <- lapply(1:nrow(rows), function(i) {
+    rows <- head(rows, 5)  # ← added
+    
+    cards <- tryCatch({#added trycatch
+      
+      lapply(1:nrow(rows), function(i) {
       h <- rows[i, ]
       stars <- ifelse(is.na(h$overall_star_display), "Not Rated", h$overall_star_display)
       rating <- suppressWarnings(as.numeric(h$`Hospital overall rating`))
@@ -171,6 +177,13 @@ function(input, output, session) {
         )
       )
     })
+      
+  
+  #TRYING STUFF HERE
+    }, error = function(e) {
+      print(paste("Error rendering cards"))
+    })
+      
     do.call(tagList, cards)
   })
   

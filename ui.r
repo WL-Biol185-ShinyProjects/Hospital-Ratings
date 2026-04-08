@@ -113,10 +113,9 @@ navbarPage("Hospital Ratings",
                                                      style = "border-radius: 50%; object-fit: cover; 
                               border: 3px solid #8ab4f8; margin-bottom: 15px;"),
                                             h4(style = "color: #1a3a5c; margin: 10px 0 5px 0;", "Maren Barclay"),
-                                            p(style = "color: #888; font-size: 13px; margin-bottom: 15px;", "Role / Major"),
+                                            p(style = "color: #888; font-size: 13px; margin-bottom: 15px;", "Co-Creator / Neuroscience Major, Africana Studies Minor"),
                                             p(style = "color: #555; font-size: 13px; text-align: left; line-height: 1.7;",
-                                              "Add a brief bio here — your background, interests, and what you contributed 
-               to this project.")
+                                              "My ultimate career goal is to become a Physician's Assistant or Nurse Practitioner, but I am interested in all types of healthcare. Beyond academics, I love hiking, painting, and spending time with friends!")
                                         )
                                  ),
                                  # Person 2
@@ -128,10 +127,9 @@ navbarPage("Hospital Ratings",
                                                      style = "border-radius: 50%; object-fit: cover; 
                               border: 3px solid #8ab4f8; margin-bottom: 15px;"),
                                             h4(style = "color: #1a3a5c; margin: 10px 0 5px 0;", "Joanne Lee"),
-                                            p(style = "color: #888; font-size: 13px; margin-bottom: 15px;", "Role / Major"),
+                                            p(style = "color: #888; font-size: 13px; margin-bottom: 15px;", "Co-Creator / Neuroscience Major, Philosophy Minor"),
                                             p(style = "color: #555; font-size: 13px; text-align: left; line-height: 1.7;",
-                                              "Add a brief bio here — your background, interests, and what they contributed 
-               to this project.")
+                                              "In the future I hope to become either a physician or physical therapist! When not studying you can find me running for the W&L track team, spending time doing outdoorsy things, or pranking people.")
                                         )
                                  )
                                )
