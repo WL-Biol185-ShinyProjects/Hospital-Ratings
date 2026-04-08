@@ -192,13 +192,14 @@ navbarPage("Hospital Ratings",
                     fluidRow(
                       column(
                         3,
-                        selectInput("state", "State", choices = c("All", sort(unique(hospitalgen$State)))),
-                        selectInput("type", "Hospital Type", choices = c("All", sort(unique(hospitalgen$`Hospital Type`)))),
-                        selectInput("ownership", "Hospital Ownership", choices = c("All", sort(unique(hospitalgen$`Hospital Ownership`))))
+                        selectInput("sr_state", "State", choices = c("All", sort(unique(hospitalgen$State)))),
+                        selectInput("sr_type", "Hospital Type", choices = c("All", sort(unique(hospitalgen$`Hospital Type`)))),
+                        selectInput("sr_ownership", "Hospital Ownership", choices = c("All", sort(unique(hospitalgen$`Hospital Ownership`)))),
+                        textInput("sr_search", "Search by Name", value = "")
                       ),
                       column(
                         9,
-                        tableOutput("cards_table")
+                        uiOutput("hospital_cards")
                       )
                     )
            ),
